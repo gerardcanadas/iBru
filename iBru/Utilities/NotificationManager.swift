@@ -1,11 +1,30 @@
 import UserNotifications
 import Foundation
+import SwiftData
 
 final class NotificationManager {
     static let shared = NotificationManager()
     private init() {}
 
     func requestPermission() {
+        let takenAction = UNNotificationAction(
+            identifier: "MARK_TAKEN",
+            title: "Mark as Taken",
+            options: [.authenticationRequired]
+        )
+        let skipAction = UNNotificationAction(
+            identifier: "SKIP_DOSE",
+            title: "Skip",
+            options: []
+        )
+        let category = UNNotificationCategory(
+            identifier: "MEDICATION_REMINDER",
+            actions: [takenAction, skipAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([category])
+
         UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     }
@@ -28,6 +47,8 @@ final class NotificationManager {
                     content.title = plan.medicationName
                     content.body = "Time for \(plan.doseSummary)"
                     content.sound = .default
+                    content.categoryIdentifier = "MEDICATION_REMINDER"
+                    content.userInfo = ["planID": prefix, "slot": slot.timeIntervalSince1970]
 
                     let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: slot)
                     let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)

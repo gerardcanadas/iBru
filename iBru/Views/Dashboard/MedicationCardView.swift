@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct MedicationCardView: View {
     let plan: MedicationPlan
