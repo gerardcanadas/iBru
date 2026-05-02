@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct HistoryView: View {
     let plan: MedicationPlan
@@ -52,24 +53,58 @@ struct HistoryView: View {
         }
     }
 
-    private var dayGroups: [DayGroup] {
+    private var upcomingGroups: [DayGroup] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
+        let lookahead = calendar.date(byAdding: .day, value: 7, to: today)!
+        let end = plan.endDate.map { min(calendar.startOfDay(for: $0), lookahead) } ?? lookahead
+
+        var groups: [DayGroup] = []
+        var day = tomorrow
+        while day <= end {
+            let slots = DoseScheduler.scheduledTimes(for: plan, on: day, calendar: calendar)
+            if !slots.isEmpty {
+                groups.append(DayGroup(id: day, slots: slots.map {
+                    SlotEntry(time: $0, record: DoseScheduler.record(for: $0, in: plan))
+                }))
+            }
+            day = calendar.date(byAdding: .day, value: 1, to: day) ?? day.addingTimeInterval(86401)
+        }
+        return groups
+    }
+
+    private var historyGroups: [DayGroup] {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: plan.startDate)
-        let end = calendar.startOfDay(for: min(.now, plan.endDate ?? .now))
+        let end = calendar.startOfDay(for: .now)
 
         var groups: [DayGroup] = []
         var day = end
         while day >= start {
             let slots = DoseScheduler.scheduledTimes(for: plan, on: day, calendar: calendar)
             if !slots.isEmpty {
-                let entries = slots.map { slot in
-                    SlotEntry(time: slot, record: DoseScheduler.record(for: slot, in: plan))
-                }
-                groups.append(DayGroup(id: day, slots: entries))
+                groups.append(DayGroup(id: day, slots: slots.map {
+                    SlotEntry(time: $0, record: DoseScheduler.record(for: $0, in: plan))
+                }))
             }
             day = calendar.date(byAdding: .day, value: -1, to: day) ?? start.addingTimeInterval(-1)
         }
         return groups
+    }
+
+    @ViewBuilder
+    private func doseRow(_ entry: SlotEntry) -> some View {
+        HStack {
+            Image(systemName: entry.status.icon)
+                .foregroundStyle(entry.status.color)
+            Text(entry.time, style: .time)
+                .font(.subheadline)
+            Spacer()
+            Text(entry.status.label)
+                .font(.caption)
+                .foregroundStyle(entry.status.color)
+        }
     }
 
     var body: some View {
@@ -90,19 +125,22 @@ struct HistoryView: View {
                 }
             }
 
-            ForEach(dayGroups) { group in
+            if !upcomingGroups.isEmpty {
+                Section("Upcoming") {}
+                ForEach(upcomingGroups) { group in
+                    Section(group.id.formatted(date: .complete, time: .omitted)) {
+                        ForEach(group.slots) { entry in
+                            doseRow(entry)
+                        }
+                    }
+                }
+            }
+
+            Section("History") {}
+            ForEach(historyGroups) { group in
                 Section(group.id.formatted(date: .complete, time: .omitted)) {
                     ForEach(group.slots) { entry in
-                        HStack {
-                            Image(systemName: entry.status.icon)
-                                .foregroundStyle(entry.status.color)
-                            Text(entry.time, style: .time)
-                                .font(.subheadline)
-                            Spacer()
-                            Text(entry.status.label)
-                                .font(.caption)
-                                .foregroundStyle(entry.status.color)
-                        }
+                        doseRow(entry)
                     }
                 }
             }
