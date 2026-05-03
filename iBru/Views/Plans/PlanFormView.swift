@@ -13,6 +13,7 @@ struct PlanFormView: View {
     @State private var medicationName: String = ""
     @State private var showMedicinePicker = false
     @State private var isNewMedicine = false
+    @State private var showDuplicateAlert = false
     @State private var doseAmount: String = "5"
     @State private var doseUnit: String = "ml"
     @State private var customUnit: String = ""
@@ -106,6 +107,11 @@ struct PlanFormView: View {
                     isNewMedicine = true
                 }
             }
+            .alert("Already Scheduled", isPresented: $showDuplicateAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("\(medicationName.trimmingCharacters(in: .whitespaces)) already has an active schedule. End the current schedule before adding a new one.")
+            }
             .sheet(isPresented: $showMedicinePicker) {
                 MedicinePickerView(plans: baby.plans) { selected in
                     if let selected {
@@ -166,9 +172,19 @@ struct PlanFormView: View {
     }
 
     private func save() {
+        let trimmedName = medicationName.trimmingCharacters(in: .whitespaces)
+        if plan == nil {
+            let isDuplicate = baby.plans.contains {
+                $0.medicationName.localizedCaseInsensitiveCompare(trimmedName) == .orderedSame && $0.isActive
+            }
+            if isDuplicate {
+                showDuplicateAlert = true
+                return
+            }
+        }
         let amount = Double(doseAmount) ?? 0
         if let p = plan {
-            p.medicationName = medicationName.trimmingCharacters(in: .whitespaces)
+            p.medicationName = trimmedName
             p.doseAmount = amount
             p.doseUnit = effectiveDoseUnit
             p.frequencyUnit = frequencyUnit
@@ -179,7 +195,7 @@ struct PlanFormView: View {
             NotificationManager.shared.scheduleNotifications(for: p)
         } else {
             let p = MedicationPlan(
-                medicationName: medicationName.trimmingCharacters(in: .whitespaces),
+                medicationName: trimmedName,
                 doseAmount: amount,
                 doseUnit: effectiveDoseUnit,
                 frequencyUnit: frequencyUnit,

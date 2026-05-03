@@ -7,6 +7,7 @@ struct PlanListView: View {
 
     @State private var showingAddPlan = false
     @State private var editingPlan: MedicationPlan?
+    @State private var planToDelete: MedicationPlan?
 
     private var activePlans: [MedicationPlan] {
         baby.plans.filter { $0.isActive }.sorted { $0.medicationName < $1.medicationName }
@@ -22,7 +23,7 @@ struct PlanListView: View {
                     ForEach(activePlans) { plan in
                         PlanRowView(plan: plan)
                             .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) { delete(plan) } label: {
+                                Button(role: .destructive) { planToDelete = plan } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
                                 Button { editingPlan = plan } label: {
@@ -60,6 +61,19 @@ struct PlanListView: View {
                     Image(systemName: "plus")
                 }
             }
+        }
+        .confirmationDialog(
+            "Stop \(planToDelete?.medicationName ?? "medication")?",
+            isPresented: Binding(get: { planToDelete != nil }, set: { if !$0 { planToDelete = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Delete Schedule", role: .destructive) {
+                if let plan = planToDelete { delete(plan) }
+                planToDelete = nil
+            }
+            Button("Cancel", role: .cancel) { planToDelete = nil }
+        } message: {
+            Text("This will remove the active schedule and all recorded doses. This cannot be undone.")
         }
         .sheet(isPresented: $showingAddPlan) {
             PlanFormView(baby: baby)
