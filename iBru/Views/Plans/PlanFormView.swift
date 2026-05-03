@@ -11,6 +11,8 @@ struct PlanFormView: View {
     var plan: MedicationPlan?
 
     @State private var medicationName: String = ""
+    @State private var showMedicinePicker = false
+    @State private var isNewMedicine = false
     @State private var doseAmount: String = "5"
     @State private var doseUnit: String = "ml"
     @State private var customUnit: String = ""
@@ -28,7 +30,23 @@ struct PlanFormView: View {
         NavigationStack {
             Form {
                 Section("Medication") {
-                    TextField("Name (e.g. Paracetamol)", text: $medicationName)
+                    if isNewMedicine {
+                        TextField("Name (e.g. Paracetamol)", text: $medicationName)
+                    } else {
+                        Button {
+                            showMedicinePicker = true
+                        } label: {
+                            HStack {
+                                Text(medicationName.isEmpty ? "Select medicine" : medicationName)
+                                    .foregroundStyle(medicationName.isEmpty ? .secondary : .primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
                     HStack {
                         TextField("Amount", text: $doseAmount)
                             .keyboardType(.decimalPad)
@@ -82,7 +100,22 @@ struct PlanFormView: View {
                         .disabled(!isValid)
                 }
             }
-            .onAppear { loadFromPlan() }
+            .onAppear {
+                loadFromPlan()
+                if !isEditing && baby.plans.isEmpty {
+                    isNewMedicine = true
+                }
+            }
+            .sheet(isPresented: $showMedicinePicker) {
+                MedicinePickerView(plans: baby.plans) { selected in
+                    if let selected {
+                        applyMedicinePlan(selected)
+                    } else {
+                        medicationName = ""
+                        isNewMedicine = true
+                    }
+                }
+            }
         }
     }
 
@@ -92,8 +125,26 @@ struct PlanFormView: View {
             && (doseUnit != "Custom" || !customUnit.trimmingCharacters(in: .whitespaces).isEmpty)
     }
 
+    private func applyMedicinePlan(_ p: MedicationPlan) {
+        medicationName = p.medicationName
+        let amount = p.doseAmount
+        doseAmount = amount.truncatingRemainder(dividingBy: 1) == 0
+            ? String(Int(amount))
+            : String(format: "%.2f", amount)
+        if doseUnits.contains(p.doseUnit) {
+            doseUnit = p.doseUnit
+            customUnit = ""
+        } else {
+            doseUnit = "Custom"
+            customUnit = p.doseUnit
+        }
+        frequencyUnit = p.frequencyUnit
+        frequencyValue = p.frequencyValue
+    }
+
     private func loadFromPlan() {
         guard let p = plan else { return }
+        isNewMedicine = true
         medicationName = p.medicationName
         doseAmount = p.doseAmount.truncatingRemainder(dividingBy: 1) == 0
             ? String(Int(p.doseAmount))
