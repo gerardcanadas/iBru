@@ -3,12 +3,15 @@ import Foundation
 
 @Model
 final class Baby {
-    var name: String
-    var birthDate: Date
-    var colorHex: String
+    var name: String = ""
+    var birthDate: Date = Date.now
+    var colorHex: String = "#5B8DEF"
 
     @Relationship(deleteRule: .cascade, inverse: \MedicationPlan.baby)
     var plans: [MedicationPlan] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \IllnessRecord.baby)
+    var illnesses: [IllnessRecord] = []
 
     init(name: String, birthDate: Date, colorHex: String = "#5B8DEF") {
         self.name = name

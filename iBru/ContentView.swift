@@ -18,9 +18,13 @@ struct ContentView: View {
                 .tabItem { Label("Today", systemImage: "list.bullet.clipboard.fill") }
                 .tag(1)
 
+            MedicalHistoryView(baby: activeBaby)
+                .tabItem { Label("History", systemImage: "stethoscope") }
+                .tag(2)
+
             BabyListView(selectedBaby: $selectedBaby)
                 .tabItem { Label("Profiles", systemImage: "person.2.fill") }
-                .tag(2)
+                .tag(3)
         }
         .onChange(of: babies) { _, newBabies in
             if selectedBaby == nil || !newBabies.contains(where: { $0.persistentModelID == selectedBaby?.persistentModelID }) {

@@ -8,19 +8,22 @@ enum FrequencyUnit: String, Codable, CaseIterable {
 
 @Model
 final class MedicationPlan {
-    var medicationName: String
-    var doseAmount: Double
-    var doseUnit: String
-    var frequencyUnit: FrequencyUnit
-    var frequencyValue: Int
-    var startDate: Date
+    var medicationName: String = ""
+    var doseAmount: Double = 0
+    var doseUnit: String = "ml"
+    var frequencyUnit: FrequencyUnit = FrequencyUnit.everyNHours
+    var frequencyValue: Int = 8
+    var startDate: Date = Date.now
     var endDate: Date?
-    var notes: String
+    var notes: String = ""
 
     var baby: Baby?
 
     @Relationship(deleteRule: .cascade, inverse: \DoseRecord.plan)
     var records: [DoseRecord] = []
+
+    @Relationship(inverse: \IllnessRecord.plans)
+    var illnesses: [IllnessRecord] = []
 
     init(
         medicationName: String,

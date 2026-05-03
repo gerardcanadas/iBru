@@ -8,9 +8,9 @@ enum DoseStatus: String, Codable {
 
 @Model
 final class DoseRecord {
-    var scheduledDate: Date
-    var recordedDate: Date
-    var status: DoseStatus
+    var scheduledDate: Date = Date.now
+    var recordedDate: Date = Date.now
+    var status: DoseStatus = DoseStatus.taken
 
     var plan: MedicationPlan?
 
