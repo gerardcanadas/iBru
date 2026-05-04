@@ -30,18 +30,25 @@ enum DoseScheduler {
             }
 
         case .timesPerDay:
-            let wakingStart = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: day)!
-            let wakingEnd   = calendar.date(bySettingHour: 22, minute: 0, second: 0, of: day)!
-            let n = plan.frequencyValue
-            guard n > 0 else { return [] }
-            if n == 1 {
-                times = [wakingStart]
-            } else {
-                let gap = wakingEnd.timeIntervalSince(wakingStart) / Double(n - 1)
-                for i in 0..<n {
-                    times.append(wakingStart.addingTimeInterval(Double(i) * gap))
-                }
-            }
+            times = distributedTimes(count: plan.frequencyValue, on: day, calendar: calendar)
+
+        case .specificDays:
+            let weekday = calendar.component(.weekday, from: day)
+            guard plan.weekdays.contains(weekday) else { return [] }
+            times = distributedTimes(count: plan.frequencyValue, on: day, calendar: calendar)
+
+        case .everyNDays:
+            let startDay = calendar.startOfDay(for: plan.startDate)
+            let targetDay = calendar.startOfDay(for: day)
+            guard let daysDiff = calendar.dateComponents([.day], from: startDay, to: targetDay).day,
+                  daysDiff >= 0,
+                  daysDiff % plan.frequencyValue == 0
+            else { return [] }
+            var comps = calendar.dateComponents([.year, .month, .day], from: day)
+            let startTime = calendar.dateComponents([.hour, .minute], from: plan.startDate)
+            comps.hour = startTime.hour
+            comps.minute = startTime.minute
+            if let date = calendar.date(from: comps) { times = [date] }
         }
 
         return times
@@ -72,5 +79,14 @@ enum DoseScheduler {
 
     static func isMatch(_ a: Date, _ b: Date) -> Bool {
         abs(a.timeIntervalSince(b)) < 60
+    }
+
+    private static func distributedTimes(count: Int, on date: Date, calendar: Calendar) -> [Date] {
+        let wakingStart = calendar.date(bySettingHour: 8, minute: 0, second: 0, of: date)!
+        let wakingEnd   = calendar.date(bySettingHour: 22, minute: 0, second: 0, of: date)!
+        guard count > 0 else { return [] }
+        if count == 1 { return [wakingStart] }
+        let gap = wakingEnd.timeIntervalSince(wakingStart) / Double(count - 1)
+        return (0..<count).map { wakingStart.addingTimeInterval(Double($0) * gap) }
     }
 }

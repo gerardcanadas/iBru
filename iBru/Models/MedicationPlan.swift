@@ -4,6 +4,8 @@ import Foundation
 enum FrequencyUnit: String, Codable, CaseIterable {
     case everyNHours = "Every N hours"
     case timesPerDay = "Times per day"
+    case specificDays = "Specific days"
+    case everyNDays   = "Every N days"
 }
 
 @Model
@@ -16,6 +18,7 @@ final class MedicationPlan {
     var startDate: Date = Date.now
     var endDate: Date?
     var notes: String = ""
+    var weekdays: [Int] = []   // Calendar weekday integers: 1=Sun, 2=Mon, … 7=Sat
 
     var baby: Baby?
 
@@ -59,6 +62,14 @@ final class MedicationPlan {
             return "Every \(frequencyValue)h"
         case .timesPerDay:
             return "\(frequencyValue)×/day"
+        case .specificDays:
+            let symbols = Calendar.current.shortWeekdaySymbols
+            let names = weekdays.sorted()
+                .compactMap { $0 >= 1 && $0 <= 7 ? symbols[$0 - 1] : nil }
+                .joined(separator: "/")
+            return frequencyValue == 1 ? "Once on \(names)" : "\(frequencyValue)×/day on \(names)"
+        case .everyNDays:
+            return frequencyValue == 1 ? "Daily" : "Every \(frequencyValue) days"
         }
     }
 

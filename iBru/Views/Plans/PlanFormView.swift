@@ -19,6 +19,7 @@ struct PlanFormView: View {
     @State private var customUnit: String = ""
     @State private var frequencyUnit: FrequencyUnit = .everyNHours
     @State private var frequencyValue: Int = 8
+    @State private var selectedWeekdays: Set<Int> = []
     @State private var startDate: Date = .now
     @State private var hasEndDate: Bool = false
     @State private var endDate: Date = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
@@ -26,6 +27,22 @@ struct PlanFormView: View {
 
     private var isEditing: Bool { plan != nil }
     private var effectiveDoseUnit: String { doseUnit == "Custom" ? customUnit : doseUnit }
+
+    private var stepperLabel: String {
+        switch frequencyUnit {
+        case .everyNHours: return "Every \(frequencyValue) hours"
+        case .timesPerDay, .specificDays: return "\(frequencyValue) times per day"
+        case .everyNDays: return frequencyValue == 1 ? "Every day" : "Every \(frequencyValue) days"
+        }
+    }
+
+    private var stepperRange: ClosedRange<Int> {
+        switch frequencyUnit {
+        case .everyNHours: return 1...24
+        case .timesPerDay, .specificDays: return 1...12
+        case .everyNDays: return 1...30
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -66,14 +83,19 @@ struct PlanFormView: View {
                     Picker("Frequency type", selection: $frequencyUnit) {
                         ForEach(FrequencyUnit.allCases, id: \.self) { Text($0.rawValue) }
                     }
+                    .onChange(of: frequencyUnit) { _, newUnit in
+                        switch newUnit {
+                        case .everyNHours:  frequencyValue = min(frequencyValue, 24)
+                        case .timesPerDay, .specificDays: frequencyValue = min(max(frequencyValue, 1), 12)
+                        case .everyNDays:   frequencyValue = min(max(frequencyValue, 1), 30)
+                        }
+                    }
 
-                    Stepper(
-                        frequencyUnit == .everyNHours
-                            ? "Every \(frequencyValue) hours"
-                            : "\(frequencyValue) times per day",
-                        value: $frequencyValue,
-                        in: frequencyUnit == .everyNHours ? 1...24 : 1...12
-                    )
+                    if frequencyUnit == .specificDays {
+                        WeekdayPicker(selectedWeekdays: $selectedWeekdays)
+                    }
+
+                    Stepper(stepperLabel, value: $frequencyValue, in: stepperRange)
 
                     DatePicker("Start date", selection: $startDate, displayedComponents: [.date, .hourAndMinute])
                 }
@@ -129,6 +151,7 @@ struct PlanFormView: View {
         !medicationName.trimmingCharacters(in: .whitespaces).isEmpty
             && Double(doseAmount) != nil
             && (doseUnit != "Custom" || !customUnit.trimmingCharacters(in: .whitespaces).isEmpty)
+            && (frequencyUnit != .specificDays || !selectedWeekdays.isEmpty)
     }
 
     private func applyMedicinePlan(_ p: MedicationPlan) {
@@ -146,6 +169,7 @@ struct PlanFormView: View {
         }
         frequencyUnit = p.frequencyUnit
         frequencyValue = p.frequencyValue
+        selectedWeekdays = Set(p.weekdays)
     }
 
     private func loadFromPlan() {
@@ -163,6 +187,7 @@ struct PlanFormView: View {
         }
         frequencyUnit = p.frequencyUnit
         frequencyValue = p.frequencyValue
+        selectedWeekdays = Set(p.weekdays)
         startDate = p.startDate
         if let end = p.endDate {
             hasEndDate = true
@@ -189,6 +214,7 @@ struct PlanFormView: View {
             p.doseUnit = effectiveDoseUnit
             p.frequencyUnit = frequencyUnit
             p.frequencyValue = frequencyValue
+            p.weekdays = Array(selectedWeekdays)
             p.startDate = startDate
             p.endDate = hasEndDate ? endDate : nil
             p.notes = notes
@@ -204,11 +230,48 @@ struct PlanFormView: View {
                 endDate: hasEndDate ? endDate : nil,
                 notes: notes
             )
+            p.weekdays = Array(selectedWeekdays)
             p.baby = baby
             modelContext.insert(p)
             NotificationManager.shared.scheduleNotifications(for: p)
         }
         dismiss()
+    }
+}
+
+private struct WeekdayPicker: View {
+    @Binding var selectedWeekdays: Set<Int>
+
+    private var orderedWeekdays: [(Int, String)] {
+        let cal = Calendar.current
+        let symbols = cal.shortWeekdaySymbols
+        let first = cal.firstWeekday
+        return (0..<7).map { offset in
+            let index = (first - 1 + offset) % 7
+            return (index + 1, symbols[index])
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(orderedWeekdays, id: \.0) { (weekday, label) in
+                let selected = selectedWeekdays.contains(weekday)
+                Button {
+                    if selected { selectedWeekdays.remove(weekday) }
+                    else { selectedWeekdays.insert(weekday) }
+                } label: {
+                    Text(label)
+                        .font(.caption)
+                        .fontWeight(selected ? .semibold : .regular)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                        .background(selected ? Color.accentColor : Color(.systemGray5))
+                        .foregroundStyle(selected ? .white : .primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 
