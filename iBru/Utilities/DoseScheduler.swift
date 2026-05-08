@@ -14,6 +14,7 @@ enum DoseScheduler {
 
         guard plan.startDate < dayEnd else { return [] }
         if let end = plan.endDate, end < dayStart { return [] }
+        if plan.stoppedDate != nil { return [] }
 
         var times: [Date] = []
 

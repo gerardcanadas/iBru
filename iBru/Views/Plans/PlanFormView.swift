@@ -219,6 +219,7 @@ struct PlanFormView: View {
             p.endDate = hasEndDate ? endDate : nil
             p.notes = notes
             NotificationManager.shared.scheduleNotifications(for: p)
+            Task { await FirestoreService.shared.save(p) }
         } else {
             let p = MedicationPlan(
                 medicationName: trimmedName,
@@ -234,6 +235,7 @@ struct PlanFormView: View {
             p.baby = baby
             modelContext.insert(p)
             NotificationManager.shared.scheduleNotifications(for: p)
+            Task { await FirestoreService.shared.save(p) }
         }
         dismiss()
     }

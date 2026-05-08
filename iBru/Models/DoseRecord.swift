@@ -8,6 +8,7 @@ enum DoseStatus: String, Codable {
 
 @Model
 final class DoseRecord {
+    var id: String = UUID().uuidString
     var scheduledDate: Date = Date.now
     var recordedDate: Date = Date.now
     var status: DoseStatus = DoseStatus.taken

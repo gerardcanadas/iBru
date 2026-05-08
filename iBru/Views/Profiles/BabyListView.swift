@@ -47,6 +47,11 @@ struct BabyListView: View {
                         Image(systemName: "plus")
                     }
                 }
+                ToolbarItem(placement: .secondaryAction) {
+                    NavigationLink(destination: FamilySettingsView()) {
+                        Label("Family Settings", systemImage: "person.2.circle")
+                    }
+                }
             }
             .sheet(isPresented: $showingAddBaby) {
                 BabyFormView()
@@ -58,11 +63,13 @@ struct BabyListView: View {
     }
 
     private func delete(_ baby: Baby) {
+        let id = baby.id
         NotificationManager.shared.cancelAllNotifications(for: baby)
         if selectedBaby?.persistentModelID == baby.persistentModelID {
             selectedBaby = nil
         }
         modelContext.delete(baby)
+        Task { await FirestoreService.shared.delete(babyId: id) }
     }
 }
 

@@ -75,9 +75,11 @@ struct BabyFormView: View {
             b.name = trimmed
             b.birthDate = birthDate
             b.colorHex = colorHex
+            Task { await FirestoreService.shared.save(b) }
         } else {
             let b = Baby(name: trimmed, birthDate: birthDate, colorHex: colorHex)
             modelContext.insert(b)
+            Task { await FirestoreService.shared.save(b) }
         }
         dismiss()
     }

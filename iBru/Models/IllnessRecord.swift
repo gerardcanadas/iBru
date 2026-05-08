@@ -3,6 +3,7 @@ import Foundation
 
 @Model
 final class IllnessRecord {
+    var id: String = UUID().uuidString
     var title: String = ""
     var startDate: Date = Date.now
     var endDate: Date?

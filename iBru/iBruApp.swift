@@ -13,12 +13,43 @@ struct iBruApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .modelContainer(container)
                 .task {
                     appDelegate.modelContainer = container
                     NotificationManager.shared.requestPermission()
                 }
+        }
+    }
+}
+
+struct RootView: View {
+    @Environment(\.modelContext) private var modelContext
+    private var auth = AuthService.shared
+    private var family = FamilyService.shared
+    @State private var isResolvingFamily = false
+
+    var body: some View {
+        Group {
+            if !auth.isSignedIn {
+                LoginView()
+            } else if isResolvingFamily {
+                ProgressView("Checking family…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if !family.hasFamily {
+                FamilySetupView(userEmail: auth.userEmail ?? "")
+            } else {
+                ContentView()
+                    .task(id: family.familyId) {
+                        await FirestoreService.shared.syncAll(context: modelContext)
+                    }
+            }
+        }
+        .task(id: auth.userEmail) {
+            guard let email = auth.userEmail, !family.hasFamily else { return }
+            isResolvingFamily = true
+            await FamilyService.shared.resolveFamily(for: email)
+            isResolvingFamily = false
         }
     }
 }

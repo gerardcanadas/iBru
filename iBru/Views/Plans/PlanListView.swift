@@ -84,8 +84,10 @@ struct PlanListView: View {
     }
 
     private func delete(_ plan: MedicationPlan) {
+        let id = plan.id
         NotificationManager.shared.cancelAllNotifications(for: plan)
         modelContext.delete(plan)
+        Task { await FirestoreService.shared.delete(planId: id) }
     }
 }
 

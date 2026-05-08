@@ -3,6 +3,7 @@ import Foundation
 
 @Model
 final class Baby {
+    var id: String = UUID().uuidString
     var name: String = ""
     var birthDate: Date = Date.now
     var colorHex: String = "#5B8DEF"

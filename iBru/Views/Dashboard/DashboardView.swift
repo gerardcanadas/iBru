@@ -7,6 +7,7 @@ struct DashboardView: View {
 
     @State private var showingAddPlan = false
     @State private var selectedPlan: MedicationPlan?
+    @State private var planToStop: MedicationPlan?
 
     private var activeBaby: Baby? { baby }
     private var accentColor: Color { Color(hex: baby?.colorHex ?? "#5B8DEF") }
@@ -57,7 +58,26 @@ struct DashboardView: View {
             .navigationDestination(item: $selectedPlan) { plan in
                 HistoryView(plan: plan)
             }
+            .confirmationDialog(
+                "Stop \(planToStop?.medicationName ?? "medication")?",
+                isPresented: Binding(get: { planToStop != nil }, set: { if !$0 { planToStop = nil } }),
+                titleVisibility: .visible
+            ) {
+                Button("Stop treatment", role: .destructive) {
+                    if let plan = planToStop { stopTreatment(plan) }
+                    planToStop = nil
+                }
+                Button("Cancel", role: .cancel) { planToStop = nil }
+            } message: {
+                Text("Future doses will be removed. Your dose history will be kept.")
+            }
         }
+    }
+
+    private func stopTreatment(_ plan: MedicationPlan) {
+        plan.stoppedDate = .now
+        NotificationManager.shared.cancelAllNotifications(for: plan)
+        Task { await FirestoreService.shared.save(plan) }
     }
 
     private func babyHeader(_ baby: Baby) -> some View {
@@ -131,6 +151,11 @@ struct DashboardView: View {
                 ForEach(activePlans) { plan in
                     MedicationCardView(plan: plan, accentColor: accentColor)
                         .onTapGesture { selectedPlan = plan }
+                        .contextMenu {
+                            Button(role: .destructive) { planToStop = plan } label: {
+                                Label("Stop treatment", systemImage: "stop.circle")
+                            }
+                        }
                 }
             }
         }

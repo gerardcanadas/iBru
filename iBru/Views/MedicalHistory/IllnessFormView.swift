@@ -113,23 +113,28 @@ struct IllnessFormView: View {
     private func save() {
         let trimmed = title.trimmingCharacters(in: .whitespaces)
         let linkedPlans = baby.plans.filter { selectedPlanIDs.contains($0.persistentModelID) }
+        let cal = Calendar.current
+        let cleanStart = cal.startOfDay(for: startDate)
+        let cleanEnd = hasEndDate ? cal.startOfDay(for: endDate) : nil as Date?
 
         if let r = illness {
             r.title = trimmed
-            r.startDate = startDate
-            r.endDate = hasEndDate ? endDate : nil
+            r.startDate = cleanStart
+            r.endDate = cleanEnd
             r.notes = notes
             r.plans = linkedPlans
+            Task { await FirestoreService.shared.save(r) }
         } else {
             let r = IllnessRecord(
                 title: trimmed,
-                startDate: startDate,
-                endDate: hasEndDate ? endDate : nil,
+                startDate: cleanStart,
+                endDate: cleanEnd,
                 notes: notes
             )
             r.baby = baby
             r.plans = linkedPlans
             modelContext.insert(r)
+            Task { await FirestoreService.shared.save(r) }
         }
         dismiss()
     }

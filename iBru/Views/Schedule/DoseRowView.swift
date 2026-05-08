@@ -95,6 +95,7 @@ struct DoseRowView: View {
         if status == .taken {
             NotificationManager.shared.cancelNotification(id: notificationId)
         }
+        Task { await FirestoreService.shared.save(r) }
     }
 
     private var notificationId: String {

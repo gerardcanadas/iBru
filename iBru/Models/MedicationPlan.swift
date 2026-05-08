@@ -10,6 +10,7 @@ enum FrequencyUnit: String, Codable, CaseIterable {
 
 @Model
 final class MedicationPlan {
+    var id: String = UUID().uuidString
     var medicationName: String = ""
     var doseAmount: Double = 0
     var doseUnit: String = "ml"
@@ -19,6 +20,7 @@ final class MedicationPlan {
     var endDate: Date?
     var notes: String = ""
     var weekdays: [Int] = []   // Calendar weekday integers: 1=Sun, 2=Mon, … 7=Sat
+    var stoppedDate: Date? = nil
 
     var baby: Baby?
 
@@ -49,6 +51,7 @@ final class MedicationPlan {
     }
 
     var isActive: Bool {
+        if stoppedDate != nil { return false }
         let now = Date.now
         let today = Calendar.current.startOfDay(for: now)
         guard startDate <= today.addingTimeInterval(86400) else { return false }

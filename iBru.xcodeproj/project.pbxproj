@@ -6,13 +6,33 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		756554C72FAB6F860045A9DD /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 756554C62FAB6F860045A9DD /* FirebaseAuth */; };
+		756554C92FAB6F860045A9DD /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 756554C82FAB6F860045A9DD /* FirebaseFirestore */; };
+		756554CC2FAB6FB10045A9DD /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 756554CB2FAB6FB10045A9DD /* GoogleSignIn */; };
+		756554CE2FAB6FB10045A9DD /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 756554CD2FAB6FB10045A9DD /* GoogleSignInSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		75A29B322FA68B0900F7F718 /* iBru.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iBru.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		756554E92FAE6D840045A9DD /* Exceptions for "iBru" folder in "iBru" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 75A29B312FA68B0900F7F718 /* iBru */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		75A29B342FA68B0900F7F718 /* iBru */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				756554E92FAE6D840045A9DD /* Exceptions for "iBru" folder in "iBru" target */,
+			);
 			path = iBru;
 			sourceTree = "<group>";
 		};
@@ -23,6 +43,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				756554C72FAB6F860045A9DD /* FirebaseAuth in Frameworks */,
+				756554C92FAB6F860045A9DD /* FirebaseFirestore in Frameworks */,
+				756554CC2FAB6FB10045A9DD /* GoogleSignIn in Frameworks */,
+				756554CE2FAB6FB10045A9DD /* GoogleSignInSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +89,10 @@
 			);
 			name = iBru;
 			packageProductDependencies = (
+				756554C62FAB6F860045A9DD /* FirebaseAuth */,
+				756554C82FAB6F860045A9DD /* FirebaseFirestore */,
+				756554CB2FAB6FB10045A9DD /* GoogleSignIn */,
+				756554CD2FAB6FB10045A9DD /* GoogleSignInSwift */,
 			);
 			productName = iBru;
 			productReference = 75A29B322FA68B0900F7F718 /* iBru.app */;
@@ -94,6 +122,10 @@
 			);
 			mainGroup = 75A29B292FA68B0900F7F718;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				756554C52FAB6F860045A9DD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				756554CA2FAB6FB10045A9DD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 75A29B332FA68B0900F7F718 /* Products */;
 			projectDirPath = "";
@@ -252,6 +284,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = iBru/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -296,6 +329,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = iBru/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -349,6 +383,48 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		756554C52FAB6F860045A9DD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.13.0;
+			};
+		};
+		756554CA2FAB6FB10045A9DD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		756554C62FAB6F860045A9DD /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 756554C52FAB6F860045A9DD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		756554C82FAB6F860045A9DD /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 756554C52FAB6F860045A9DD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		756554CB2FAB6FB10045A9DD /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 756554CA2FAB6FB10045A9DD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		756554CD2FAB6FB10045A9DD /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 756554CA2FAB6FB10045A9DD /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 75A29B2A2FA68B0900F7F718 /* Project object */;
 }
