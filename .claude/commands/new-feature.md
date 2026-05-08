@@ -26,8 +26,35 @@ Every feature consists of three views:
 - `onAppear { loadFromRecord() }` — populates state from existing record when editing
 - `private var isValid: Bool { ... }` — disables Save button
 - `save()` — branches on `plan == nil` for insert vs update; calls `modelContext.insert()` for new items; SwiftData auto-saves on dismiss
+- **Every insert and update must be followed by a Firestore write-through** (see pattern below)
 - `NavigationStack` with `.inline` title, Cancel + Save toolbar items
 - No `modelContext.save()` call needed — SwiftData flushes automatically
+
+### Firestore write-through pattern
+
+Every write (insert, update, delete) must mirror to Firestore so other devices see the change.
+
+**Insert / update** — add after `modelContext.insert(r)` or after mutating an existing record:
+```swift
+Task { await FirestoreService.shared.save(r) }
+```
+
+**Delete** — capture the id BEFORE deleting (the object is invalid after deletion):
+```swift
+let id = record.id
+modelContext.delete(record)
+Task { await FirestoreService.shared.delete(myModelId: id) }
+```
+
+**Inline mutations** (e.g. "Mark as Recovered" button in a DetailView):
+```swift
+Button {
+    record.endDate = .now
+    Task { await FirestoreService.shared.save(record) }
+} label: { ... }
+```
+
+`FirestoreService` must have matching `save(_ r: MyModel)` and `delete(myModelId:)` methods — add them following the existing patterns for `Baby`, `MedicationPlan`, etc. Use `/add-sync-for-model` to generate the full sync wiring for a new model.
 
 ### 3. DetailView
 - Accepts the model directly (not just an ID)
