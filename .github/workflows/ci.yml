@@ -18,14 +18,12 @@ jobs:
         run: xcodebuild -version
 
       - name: Resolve package dependencies
-        working-directory: iBru
         run: |
           xcodebuild -resolvePackageDependencies \
             -project iBru.xcodeproj \
             -scheme iBru
 
       - name: Build
-        working-directory: iBru
         run: |
           set -o pipefail
           xcodebuild build \
@@ -39,7 +37,6 @@ jobs:
             2>&1 | grep -E "error:|BUILD (SUCCEEDED|FAILED)"
 
       - name: Test
-        working-directory: iBru
         run: |
           set -o pipefail
           xcodebuild test \
