@@ -2,10 +2,20 @@ Commit all modified/untracked Swift files and push to main.
 
 Steps:
 1. Run `git status` and `git diff` to see what changed
-2. Run `git log -5 --oneline` to match the commit message style of recent commits
-3. Stage only relevant source files (never `.env`, never `xcuserdata/`, never unrelated files)
-4. Write a concise commit message: one subject line starting with a conventional prefix (`feat:`, `fix:`, `refactor:`) that describes WHY, not what
-5. Commit with Co-Authored-By trailer:
+2. Run the test suite and confirm all tests pass before committing:
+   ```
+   xcodebuild test \
+     -project iBru.xcodeproj \
+     -scheme iBru \
+     -sdk iphonesimulator \
+     -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+     CODE_SIGNING_ALLOWED=NO 2>&1 | grep -E "passed|failed|error:"
+   ```
+   If any test fails, stop and fix it before proceeding.
+3. Run `git log -5 --oneline` to match the commit message style of recent commits
+4. Stage only relevant source files (never `.env`, never `xcuserdata/`, never unrelated files)
+5. Write a concise commit message: one subject line starting with a conventional prefix (`feat:`, `fix:`, `refactor:`) that describes WHY, not what
+6. Commit with Co-Authored-By trailer:
    ```
    Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
    ```

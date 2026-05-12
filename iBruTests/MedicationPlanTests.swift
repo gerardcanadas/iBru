@@ -131,6 +131,28 @@ struct IllnessRecordTests {
         return r
     }
 
+    // MARK: - durationSummary
+
+    @Test func durationSummary_resolved_containsSeparatorAndNoOngoing() {
+        let r = IllnessRecord(
+            title: "Cold",
+            startDate: Date.now.addingTimeInterval(-86400 * 5),
+            endDate:   Date.now.addingTimeInterval(-86400)
+        )
+        context.insert(r)
+        let parts = r.durationSummary.components(separatedBy: " \u{2013} ")
+        #expect(parts.count == 2)
+        #expect(!r.durationSummary.contains("ongoing"))
+    }
+
+    @Test func durationSummary_ongoing_endsWithOngoing() {
+        let r = IllnessRecord(title: "Fever", startDate: Date.now, endDate: nil)
+        context.insert(r)
+        #expect(r.durationSummary.hasSuffix("ongoing"))
+    }
+
+    // MARK: - isOngoing
+
     @Test func isOngoing_noEndDate_returnsTrue() {
         #expect(illness().isOngoing == true)
     }

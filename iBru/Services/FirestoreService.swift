@@ -126,8 +126,10 @@ final class FirestoreService {
         let illnessesSnap = try? await ref.collection("illnesses").getDocuments()
         let quickDosesSnap = try? await ref.collection("quickDoses").getDocuments()
 
+        // If fetch failed (e.g. permission denied), bail without touching local data
+        guard let babyDocs = babiesSnap?.documents else { return }
         // First setup: Firestore is empty, push local data up
-        guard babiesSnap?.documents.isEmpty == false else {
+        guard !babyDocs.isEmpty else {
             await pushAll(context: context)
             return
         }
@@ -150,7 +152,7 @@ final class FirestoreService {
         var seenIllnesses = Set<String>()
         var seenQuickDoses = Set<String>()
 
-        for doc in babiesSnap?.documents ?? [] {
+        for doc in babyDocs {
             let d = doc.data()
             guard let id = d["id"] as? String,
                   let name = d["name"] as? String,

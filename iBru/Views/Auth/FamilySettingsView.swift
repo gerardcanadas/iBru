@@ -14,6 +14,17 @@ struct FamilySettingsView: View {
                 LabeledContent("Signed in as", value: auth.userEmail ?? "—")
             }
 
+            Section("Members") {
+                if family.members.isEmpty {
+                    Text("Loading…")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(family.members, id: \.self) { email in
+                        Label(email, systemImage: "person.circle")
+                    }
+                }
+            }
+
             Section {
                 LabeledContent("Family code", value: family.familyId ?? "—")
                 Button {
@@ -59,6 +70,7 @@ struct FamilySettingsView: View {
         }
         .navigationTitle("Family Settings")
         .navigationBarTitleDisplayMode(.large)
+        .task { await FamilyService.shared.fetchMembers() }
     }
 
     private func invite() async {

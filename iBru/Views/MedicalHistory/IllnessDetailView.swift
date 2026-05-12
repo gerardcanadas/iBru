@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct IllnessDetailView: View {
-    let record: IllnessRecord
+    @Bindable var record: IllnessRecord
     @State private var showingEdit = false
 
     private struct DoseEntry: Identifiable {

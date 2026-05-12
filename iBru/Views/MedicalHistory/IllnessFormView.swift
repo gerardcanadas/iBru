@@ -6,6 +6,7 @@ private struct PlanOption: Identifiable {
     let name: String
     let dose: String
     let frequency: String
+    let isActive: Bool
 }
 
 struct IllnessFormView: View {
@@ -21,13 +22,24 @@ struct IllnessFormView: View {
     @State private var endDate: Date = .now
     @State private var notes: String = ""
     @State private var selectedPlanIDs: Set<PersistentIdentifier> = []
+    @State private var showMedicationPicker = false
 
     private var isEditing: Bool { illness != nil }
 
     private var planOptions: [PlanOption] {
         baby.plans
             .sorted { $0.medicationName < $1.medicationName }
-            .map { PlanOption(id: $0.persistentModelID, name: $0.medicationName, dose: $0.doseSummary, frequency: $0.frequencySummary) }
+            .map { PlanOption(id: $0.persistentModelID, name: $0.medicationName,
+                              dose: $0.doseSummary, frequency: $0.frequencySummary,
+                              isActive: $0.isActive) }
+    }
+
+    private var selectedSummary: String {
+        let names = planOptions
+            .filter { selectedPlanIDs.contains($0.id) }
+            .map(\.name)
+        if names.isEmpty { return "None" }
+        return names.joined(separator: ", ")
     }
 
     var body: some View {
@@ -45,36 +57,23 @@ struct IllnessFormView: View {
                     }
                 }
 
-                Section("Medications taken") {
-                    if planOptions.isEmpty {
-                        Text("No medication plans recorded")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(planOptions) { option in
-                            Button {
-                                if selectedPlanIDs.contains(option.id) {
-                                    selectedPlanIDs.remove(option.id)
-                                } else {
-                                    selectedPlanIDs.insert(option.id)
-                                }
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(option.name)
-                                            .foregroundStyle(.primary)
-                                        Text("\(option.dose) · \(option.frequency)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    if selectedPlanIDs.contains(option.id) {
-                                        Image(systemName: "checkmark")
-                                            .foregroundStyle(.tint)
-                                    }
-                                }
-                            }
-                            .buttonStyle(.plain)
+                Section {
+                    Button { showMedicationPicker = true } label: {
+                        HStack {
+                            Text(selectedSummary)
+                                .foregroundStyle(selectedPlanIDs.isEmpty ? .secondary : .primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                         }
+                    }
+                    .foregroundStyle(.primary)
+                } header: {
+                    Text("Medications taken")
+                } footer: {
+                    if planOptions.isEmpty {
+                        Text("No medication plans have been created for \(baby.name). Create a plan first to link it to an illness.")
                     }
                 }
 
@@ -95,6 +94,9 @@ struct IllnessFormView: View {
                 }
             }
             .onAppear { loadFromRecord() }
+            .sheet(isPresented: $showMedicationPicker) {
+                MedicationPickerSheet(plans: planOptions, selectedIDs: $selectedPlanIDs)
+            }
         }
     }
 
@@ -137,5 +139,73 @@ struct IllnessFormView: View {
             Task { await FirestoreService.shared.save(r) }
         }
         dismiss()
+    }
+}
+
+// MARK: - Medication picker sheet
+
+private struct MedicationPickerSheet: View {
+    let plans: [PlanOption]
+    @Binding var selectedIDs: Set<PersistentIdentifier>
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if plans.isEmpty {
+                    ContentUnavailableView(
+                        "No medications",
+                        systemImage: "pills",
+                        description: Text("Create a medication plan first.")
+                    )
+                } else {
+                    List {
+                        ForEach(plans) { plan in
+                            Button {
+                                if selectedIDs.contains(plan.id) {
+                                    selectedIDs.remove(plan.id)
+                                } else {
+                                    selectedIDs.insert(plan.id)
+                                }
+                            } label: {
+                                HStack(spacing: 12) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(plan.name)
+                                            .foregroundStyle(.primary)
+                                        Text("\(plan.dose) · \(plan.frequency)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        if !plan.isActive {
+                                            Text("Inactive")
+                                                .font(.caption2)
+                                                .foregroundStyle(.orange)
+                                        }
+                                    }
+                                    Spacer()
+                                    if selectedIDs.contains(plan.id) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.tint)
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Select Medications")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+                if !selectedIDs.isEmpty {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Clear") { selectedIDs.removeAll() }
+                    }
+                }
+            }
+        }
     }
 }

@@ -25,6 +25,10 @@ struct ContentView: View {
             BabyListView(selectedBaby: $selectedBaby)
                 .tabItem { Label("Profiles", systemImage: "person.2.fill") }
                 .tag(3)
+
+            InsightsView(baby: activeBaby)
+                .tabItem { Label("Insights", systemImage: "chart.bar.xaxis") }
+                .tag(4)
         }
         .onChange(of: babies) { _, newBabies in
             if selectedBaby == nil || !newBabies.contains(where: { $0.persistentModelID == selectedBaby?.persistentModelID }) {

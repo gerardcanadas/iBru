@@ -6,8 +6,9 @@ final class FamilyService {
     static let shared = FamilyService()
 
     private(set) var familyId: String?
+    private(set) var members: [String] = []
 
-    private let db = Firestore.firestore()
+    @ObservationIgnored private lazy var db = Firestore.firestore()
     private let key = "ibru_familyId"
 
     private init() {
@@ -16,6 +17,12 @@ final class FamilyService {
 
     var hasFamily: Bool { familyId != nil }
 
+    func fetchMembers() async {
+        guard let fid = familyId else { return }
+        let doc = try? await db.collection("families").document(fid).getDocument()
+        members = doc?.data()?["members"] as? [String] ?? []
+    }
+
     func createFamily(ownerEmail: String) async throws {
         let id = UUID().uuidString
         try await db.collection("families").document(id).setData([
@@ -23,6 +30,7 @@ final class FamilyService {
             "members": [ownerEmail]
         ])
         store(id)
+        members = [ownerEmail]
     }
 
     func joinFamily(id: String, email: String) async throws {
@@ -32,6 +40,7 @@ final class FamilyService {
             "members": FieldValue.arrayUnion([email])
         ])
         store(id)
+        await fetchMembers()
     }
 
     func inviteMember(email: String) async throws {
@@ -39,6 +48,7 @@ final class FamilyService {
         try await db.collection("families").document(fid).updateData([
             "members": FieldValue.arrayUnion([email])
         ])
+        await fetchMembers()
     }
 
     // Auto-join if the user's email is already in a family's members list
@@ -50,11 +60,13 @@ final class FamilyService {
             .getDocuments()
         if let fid = snap?.documents.first?.documentID {
             store(fid)
+            await fetchMembers()
         }
     }
 
     func clearFamily() {
         familyId = nil
+        members = []
         UserDefaults.standard.removeObject(forKey: key)
     }
 

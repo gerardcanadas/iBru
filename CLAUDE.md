@@ -13,7 +13,7 @@ xcodebuild test \
   -project iBru.xcodeproj \
   -scheme iBru \
   -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   CODE_SIGNING_ALLOWED=NO
 ```
 

@@ -5,7 +5,7 @@ import Foundation
 let previewContainer: ModelContainer = {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(
-        for: Baby.self, MedicationPlan.self, DoseRecord.self,
+        for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self,
         configurations: config
     )
     let ctx = container.mainContext
@@ -52,6 +52,28 @@ let previewContainer: ModelContainer = {
     )
     quickDose.baby = baby
     ctx.insert(quickDose)
+
+    // Sample DoseRecords for Insights preview
+    let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: .now)!
+    let r2 = DoseRecord(scheduledDate: twoDaysAgo, status: .skipped)
+    r2.plan = plan1; ctx.insert(r2)
+    let r3 = DoseRecord(scheduledDate: Calendar.current.date(byAdding: .day, value: -5, to: .now)!, status: .taken)
+    r3.plan = plan1; ctx.insert(r3)
+
+    // Sample IllnessRecords for Insights preview
+    let coldStart = Calendar.current.date(byAdding: .day, value: -20, to: .now)!
+    let coldEnd   = Calendar.current.date(byAdding: .day, value: -18, to: .now)!
+    let cold = IllnessRecord(title: "Cold", startDate: coldStart, endDate: coldEnd)
+    cold.baby = baby; ctx.insert(cold)
+
+    let bronchStart = Calendar.current.date(byAdding: .day, value: -10, to: .now)!
+    let bronch = IllnessRecord(title: "Bronchitis", startDate: bronchStart, endDate: nil)
+    bronch.baby = baby; ctx.insert(bronch)
+
+    let feverStart = Calendar.current.date(byAdding: .day, value: -60, to: .now)!
+    let feverEnd   = Calendar.current.date(byAdding: .day, value: -55, to: .now)!
+    let fever = IllnessRecord(title: "Fever", startDate: feverStart, endDate: feverEnd)
+    fever.baby = baby; ctx.insert(fever)
 
     return container
 }()
