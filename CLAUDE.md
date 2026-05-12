@@ -127,6 +127,37 @@ Format specifiers: `\(Int)` → `%lld`, `\(String)` → `%@`.
 
 Never hardcode Spanish or Catalan text in Swift source — all translations belong in the xcstrings file.
 
+## UI Architecture
+
+### Tab structure (4 tabs)
+
+| # | Tab | Icon | Purpose |
+|---|-----|------|---------|
+| 1 | **Home** | `house.fill` | Daily medication overview + quick dose logging. Medication card tap → dose timeline for that plan. |
+| 2 | **Records** | `stethoscope` | Health records hub with segment picker: **Illness \| Growth \| Vaccines**. Replaces the old Medical History tab. |
+| 3 | **Insights** | `chart.xyaxis.line` | Analytics for all health data types. |
+| 4 | **Profiles** | `person.2.fill` | Baby profiles + Family Settings. |
+
+The **Today** tab was merged into Home — tapping a medication card on the Dashboard pushes the dose timeline inline.
+
+### Feature placement
+
+| Feature type | Where it lives |
+|---|---|
+| Daily action (log dose, log quick dose) | Home tab (Dashboard area) |
+| Health record (illness, growth measurement, vaccine, temperature) | Records tab — new segment in `RecordsView` |
+| Analytics / charting | Insights tab |
+| Baby biography or account/family settings | Profiles tab |
+
+### Records hub pattern
+
+New health record features (Growth, Vaccines, etc.) go in `iBru/Views/Records/<Feature>/`. Each feature adds:
+1. A new case to the `RecordsSegment` enum in `RecordsView.swift`
+2. A new entry in the `switch` inside `RecordsView` body
+3. `<Feature>ListView`, `<Feature>DetailView`, `<Feature>FormView` in `Views/Records/<Feature>/`
+
+Use `/new-health-record` for the full scaffolding checklist.
+
 ## SwiftData conventions
 
 - All stored properties need explicit default values with fully-qualified names (`Date.now`, `FrequencyUnit.everyNHours`) — the `@Model` macro requires this.
@@ -148,3 +179,4 @@ Skills are in `.claude/commands/`:
 | `/add-notifications` | Add local push notifications for a medication plan |
 | `/add-preview-data` | Add sample instances to `PreviewContainer` |
 | `/new-scheduler-type` | Add a new `FrequencyUnit` case end-to-end |
+| `/new-health-record` | Scaffold a new Records-hub feature (model → Firestore → Views/Records/<Feature>/ → RecordsSegment case) |

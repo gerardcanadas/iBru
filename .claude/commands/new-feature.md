@@ -110,4 +110,25 @@ The app supports English (default), Spanish, and Catalan via `iBru/Localizable.x
 
 Never hardcode Spanish or Catalan strings in Swift source — all translations live in the xcstrings file.
 
+## Where does this feature belong?
+
+Before scaffolding, decide which tab the feature lives in:
+
+```
+Is it a daily action (log a dose, log a quick dose, check today's schedule)?
+  → Home tab (Dashboard area — DashboardView or a pushed child view)
+
+Is it a health record (illness episode, growth measurement, vaccine, temperature reading)?
+  → Records tab — new segment inside RecordsView
+  → Use /new-health-record for the full scaffolding checklist
+
+Is it analytics or charting?
+  → Insights tab (add a new segment to InsightsView)
+
+Is it baby biography or account/family settings?
+  → Profiles tab (FamilySettingsView or a new child view there)
+```
+
+Features that add a new Records segment must also add a new case to `RecordsSegment` (enum in `RecordsView.swift`) and a corresponding entry in the `switch` body.
+
 Now scaffold the feature the user described, following all of the above.
