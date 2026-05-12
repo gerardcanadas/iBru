@@ -74,13 +74,19 @@ struct HistoryView: View {
         return groups
     }
 
+    private var todaySlots: [SlotEntry] {
+        DoseScheduler.scheduledTimes(for: plan, on: .now)
+            .map { SlotEntry(time: $0, record: DoseScheduler.record(for: $0, in: plan)) }
+    }
+
     private var historyGroups: [DayGroup] {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: plan.startDate)
-        let end = calendar.startOfDay(for: .now)
+        let today = calendar.startOfDay(for: .now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
 
         var groups: [DayGroup] = []
-        var day = end
+        var day = yesterday
         while day >= start {
             let slots = DoseScheduler.scheduledTimes(for: plan, on: day, calendar: calendar)
             if !slots.isEmpty {
@@ -121,6 +127,14 @@ struct HistoryView: View {
                         Text("Ends \(end.formatted(date: .abbreviated, time: .omitted))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            if !todaySlots.isEmpty {
+                Section("Today") {
+                    ForEach(todaySlots) { entry in
+                        DoseRowView(slot: entry.time, plan: plan)
                     }
                 }
             }
