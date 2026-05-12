@@ -86,4 +86,28 @@ Tab("Label", systemImage: "sf.symbol") {
 }
 ```
 
+## Localization
+
+The app supports English (default), Spanish, and Catalan via `iBru/Localizable.xcstrings`.
+
+**In SwiftUI views**: `Text("Some string")`, `Button("Label")`, `Label("Title", ...)`, `.navigationTitle("X")` all accept `LocalizedStringKey` automatically — just use string literals as normal. Xcode looks up the key in `Localizable.xcstrings` at runtime.
+
+**For string values (not LocalizedStringKey)**: Anywhere a `String` is returned or stored, use `String(localized: "key")`:
+- Model computed properties (`frequencySummary`, `durationSummary`, `label` on enums)
+- `LabeledContent("Label", value: someString)` — the `value:` parameter is verbatim
+- Dynamic confirmation/error messages stored in `@State var message: String`
+
+**Adding new strings**: For every new user-visible string, add a matching key to `iBru/Localizable.xcstrings` with Spanish (`es`) and Catalan (`ca`) translations. The source language is English — English entries are omitted (key = value). Format specifier keys: `\(Int)` becomes `%lld`, `\(String)` becomes `%@`.
+
+```json
+"My new string" : {
+  "localizations" : {
+    "ca" : { "stringUnit" : { "state" : "translated", "value" : "La meva nova cadena" } },
+    "es" : { "stringUnit" : { "state" : "translated", "value" : "Mi nueva cadena" } }
+  }
+}
+```
+
+Never hardcode Spanish or Catalan strings in Swift source — all translations live in the xcstrings file.
+
 Now scaffold the feature the user described, following all of the above.

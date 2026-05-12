@@ -62,9 +62,23 @@ final class MyModel {
         formatter.dateFormat = "MMM d"
         let start = formatter.string(from: startDate)
         if let end = endDate { return "\(start) – \(formatter.string(from: end))" }
-        return "\(start) – ongoing"
+        return "\(start) – \(String(localized: "ongoing"))"
     }
 }
 ```
+
+## Localization
+
+All computed properties that return user-visible strings **must** use `String(localized:)` so they pick up the correct translation when the user has changed the in-app language. Plain string literals in computed properties are NOT localized.
+
+```swift
+// ✅ correct
+var statusLabel: String { String(localized: "Ongoing") }
+
+// ❌ wrong — ignores the selected language
+var statusLabel: String { "Ongoing" }
+```
+
+After adding new localized keys, add matching `es` and `ca` translations in `iBru/Localizable.xcstrings`.
 
 Now create the model the user described, following all of the above.

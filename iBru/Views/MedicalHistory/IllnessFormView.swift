@@ -101,7 +101,10 @@ struct IllnessFormView: View {
     }
 
     private func loadFromRecord() {
-        guard let r = illness else { return }
+        guard let r = illness else {
+            selectedPlanIDs = Set(planOptions.filter(\.isActive).map(\.id))
+            return
+        }
         title = r.title
         startDate = r.startDate
         if let end = r.endDate {

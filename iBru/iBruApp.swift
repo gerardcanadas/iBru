@@ -32,6 +32,7 @@ struct RootView: View {
     private var auth = AuthService.shared
     private var family = FamilyService.shared
     @State private var isResolvingFamily = false
+    @AppStorage("ibru_colorScheme") private var colorSchemeRaw: String = "system"
 
     var body: some View {
         Group {
@@ -49,6 +50,7 @@ struct RootView: View {
                     }
             }
         }
+        .preferredColorScheme(AppearanceMode(rawValue: colorSchemeRaw)?.colorScheme ?? nil)
         .task(id: auth.userEmail) {
             guard let email = auth.userEmail, !family.hasFamily else { return }
             isResolvingFamily = true

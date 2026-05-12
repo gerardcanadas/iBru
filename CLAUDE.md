@@ -90,6 +90,43 @@ let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRec
 
 `Utilities/PreviewContainer.swift` exports `previewContainer` (in-memory `ModelContainer` with sample data). Add sample instances there for every new model.
 
+## Localization
+
+The app supports **English** (source/fallback), **Spanish** (`es`), and **Catalan** (`ca`) via a single String Catalog at `iBru/Localizable.xcstrings` (Xcode 15+, `LOCALIZATION_PREFERS_STRING_CATALOGS = YES`).
+
+### How language switching works
+
+`LanguageOption` (`Utilities/LanguageOption.swift`) maps `.system / .english / .spanish / .catalan` to raw values `"system" / "en" / "es" / "ca"`. The selection is stored in `@AppStorage("ibru_language")`. On change, `FamilySettingsView` writes `["es"]` (or `["ca"]`) to `UserDefaults["AppleLanguages"]`, or removes the key for "system". iOS reads this key on launch to select the bundle locale, so a full app restart is required — a "Restart Required" alert with `exit(0)` handles this.
+
+Appearance (light / dark / system) works analogously via `AppearanceMode` + `@AppStorage("ibru_colorScheme")`, applied with `.preferredColorScheme(...)` at `RootView`.
+
+### String patterns
+
+| Context | Pattern |
+|---|---|
+| `Text(...)`, `Button("...")`, `.navigationTitle(...)` | Plain string literal — already `LocalizedStringKey` |
+| `LabeledContent("Label", value: someString)` | `value:` is verbatim — use `String(localized: "key")` |
+| Model computed properties returning `String` | `String(localized: "key")` — reads `AppleLanguages` |
+| Dynamic messages stored as `String` | `String(localized: "...")` at assignment site |
+
+### Adding new strings
+
+1. Write the English literal as normal in Swift (it doubles as the catalog key).
+2. Add a matching entry in `Localizable.xcstrings` under both `es` and `ca`:
+
+```json
+"My new string" : {
+  "localizations" : {
+    "ca" : { "stringUnit" : { "state" : "translated", "value" : "La meva nova cadena" } },
+    "es" : { "stringUnit" : { "state" : "translated", "value" : "Mi nueva cadena" } }
+  }
+}
+```
+
+Format specifiers: `\(Int)` → `%lld`, `\(String)` → `%@`.
+
+Never hardcode Spanish or Catalan text in Swift source — all translations belong in the xcstrings file.
+
 ## SwiftData conventions
 
 - All stored properties need explicit default values with fully-qualified names (`Date.now`, `FrequencyUnit.everyNHours`) — the `@Model` macro requires this.

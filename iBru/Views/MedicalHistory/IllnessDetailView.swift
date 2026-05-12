@@ -5,49 +5,10 @@ struct IllnessDetailView: View {
     @Bindable var record: IllnessRecord
     @State private var showingEdit = false
 
-    private struct DoseEntry: Identifiable {
-        let id: UUID = UUID()
-        let scheduledDate: Date
-        let status: DoseStatus
-    }
-
-    private struct PlanSummary: Identifiable {
-        let id: PersistentIdentifier
-        let name: String
-        let detail: String
-        let doses: [DoseEntry]
-
-        var takenCount: Int { doses.filter { $0.status == .taken }.count }
-        var skippedCount: Int { doses.filter { $0.status == .skipped }.count }
-    }
-
-    private var planSummaries: [PlanSummary] {
-        let cal = Calendar.current
-        let start = cal.startOfDay(for: record.startDate)
-        let end: Date = {
-            guard let endDate = record.endDate else { return Date.now }
-            return cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: endDate)) ?? endDate
-        }()
-        return record.plans
-            .sorted { $0.medicationName < $1.medicationName }
-            .map { plan in
-                let doses = plan.records
-                    .filter { $0.scheduledDate >= start && $0.scheduledDate < end }
-                    .sorted { $0.scheduledDate < $1.scheduledDate }
-                    .map { DoseEntry(scheduledDate: $0.scheduledDate, status: $0.status) }
-                return PlanSummary(
-                    id: plan.persistentModelID,
-                    name: plan.medicationName,
-                    detail: "\(plan.doseSummary) · \(plan.frequencySummary)",
-                    doses: doses
-                )
-            }
-    }
-
     private var durationText: String {
-        guard let end = record.endDate else { return "Ongoing" }
+        guard let end = record.endDate else { return String(localized: "Ongoing") }
         let days = Calendar.current.dateComponents([.day], from: record.startDate, to: end).day ?? 0
-        return days == 1 ? "1 day" : "\(days) days"
+        return days == 1 ? String(localized: "1 day") : String(localized: "\(days) days")
     }
 
     var body: some View {
@@ -68,52 +29,18 @@ struct IllnessDetailView: View {
                 LabeledContent("Duration", value: durationText)
             }
 
-            if planSummaries.isEmpty {
-                Section("Medications") {
+            Section("Medications") {
+                if record.plans.isEmpty {
                     Text("No medications linked to this record. Tap Edit to add them.")
                         .foregroundStyle(.secondary)
                         .font(.subheadline)
-                }
-            } else {
-                ForEach(planSummaries) { plan in
-                    Section {
-                        if plan.doses.isEmpty {
-                            Text("No doses logged during this illness")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            ForEach(plan.doses) { dose in
-                                HStack(spacing: 10) {
-                                    Image(systemName: dose.status == .taken ? "checkmark.circle.fill" : "forward.fill")
-                                        .foregroundStyle(dose.status == .taken ? .green : .orange)
-                                        .font(.subheadline)
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(dose.scheduledDate, style: .date)
-                                            .font(.subheadline)
-                                        Text(dose.scheduledDate, style: .time)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Text(dose.status == .taken ? "Taken" : "Skipped")
-                                        .font(.caption)
-                                        .foregroundStyle(dose.status == .taken ? .green : .orange)
-                                }
-                            }
-                        }
-                    } header: {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(plan.name)
-                            Text(plan.detail)
+                } else {
+                    ForEach(record.plans.sorted { $0.medicationName < $1.medicationName }) { plan in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(plan.medicationName)
+                            Text("\(plan.doseSummary) · \(plan.frequencySummary)")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                                .textCase(nil)
-                            if !plan.doses.isEmpty {
-                                Text("\(plan.takenCount) taken · \(plan.skippedCount) skipped")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .textCase(nil)
-                            }
                         }
                     }
                 }

@@ -62,17 +62,21 @@ final class MedicationPlan {
     var frequencySummary: String {
         switch frequencyUnit {
         case .everyNHours:
-            return "Every \(frequencyValue)h"
+            return String(localized: "Every \(frequencyValue)h")
         case .timesPerDay:
-            return "\(frequencyValue)×/day"
+            return String(localized: "\(frequencyValue)×/day")
         case .specificDays:
             let symbols = Calendar.current.shortWeekdaySymbols
             let names = weekdays.sorted()
                 .compactMap { $0 >= 1 && $0 <= 7 ? symbols[$0 - 1] : nil }
                 .joined(separator: "/")
-            return frequencyValue == 1 ? "Once on \(names)" : "\(frequencyValue)×/day on \(names)"
+            return frequencyValue == 1
+                ? String(localized: "Once on \(names)")
+                : String(localized: "\(frequencyValue)×/day on \(names)")
         case .everyNDays:
-            return frequencyValue == 1 ? "Daily" : "Every \(frequencyValue) days"
+            return frequencyValue == 1
+                ? String(localized: "Daily")
+                : String(localized: "Every \(frequencyValue) days")
         }
     }
 

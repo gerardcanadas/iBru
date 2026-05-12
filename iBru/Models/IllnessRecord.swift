@@ -35,6 +35,6 @@ final class IllnessRecord {
         if let end = endDate {
             return "\(start) – \(formatter.string(from: end))"
         }
-        return "\(start) – ongoing"
+        return "\(start) – \(String(localized: "ongoing"))"
     }
 }

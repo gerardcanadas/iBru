@@ -4,9 +4,12 @@ struct FamilySettingsView: View {
     private var family = FamilyService.shared
     private var auth = AuthService.shared
 
+    @AppStorage("ibru_colorScheme") private var colorSchemeRaw: String = "system"
+    @AppStorage("ibru_language")    private var languageRaw: String = "system"
     @State private var inviteEmail = ""
     @State private var isInviting = false
     @State private var inviteMessage: (text: String, isError: Bool)?
+    @State private var showRestartAlert = false
 
     var body: some View {
         List {
@@ -62,6 +65,41 @@ struct FamilySettingsView: View {
                 Text("The person must sign in with this Google account and they'll automatically join your family.")
             }
 
+            Section("Language") {
+                Picker("Language", selection: $languageRaw) {
+                    ForEach(LanguageOption.allCases, id: \.rawValue) { option in
+                        Text(option.label).tag(option.rawValue)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            }
+            .onChange(of: languageRaw) { _, newValue in
+                let lang = LanguageOption(rawValue: newValue) ?? .system
+                if lang == .system {
+                    UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+                } else {
+                    UserDefaults.standard.set([lang.rawValue], forKey: "AppleLanguages")
+                    UserDefaults.standard.synchronize()
+                }
+                showRestartAlert = true
+            }
+            .alert("Restart Required", isPresented: $showRestartAlert) {
+                Button("Restart Now", role: .destructive) { exit(0) }
+                Button("Later", role: .cancel) { }
+            } message: {
+                Text("The language will change after restarting the app.")
+            }
+
+            Section("Display") {
+                Picker("Appearance", selection: $colorSchemeRaw) {
+                    ForEach(AppearanceMode.allCases, id: \.rawValue) { mode in
+                        Text(mode.label).tag(mode.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+
             Section {
                 Button("Sign out", role: .destructive) {
                     try? AuthService.shared.signOut()
@@ -79,7 +117,7 @@ struct FamilySettingsView: View {
         do {
             try await FamilyService.shared.inviteMember(email: email)
             inviteEmail = ""
-            inviteMessage = ("Invitation sent to \(email).", false)
+            inviteMessage = (String(localized: "Invitation sent to \(email)."), false)
         } catch {
             inviteMessage = (error.localizedDescription, true)
         }

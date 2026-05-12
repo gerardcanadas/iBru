@@ -90,6 +90,16 @@ Avoid testing:
 - `FamilyService` methods that call Firestore (`createFamily`, `joinFamily`, `fetchMembers`, etc.)
 - Anything that relies on `Date.now` without injecting the date
 
+## When a change touches view code only
+
+If a change adds or removes code exclusively inside SwiftUI view bodies or private view methods, state this explicitly rather than silently skipping tests. Acceptable reasons to have no new tests:
+
+- Only removed code (no new logic, no new computed properties)
+- New logic is a trivial single-expression default (e.g. a one-liner filter used as a UI default) and depends on private view types that cannot be constructed in tests
+- The change is a pure layout/style adjustment
+
+If the logic is non-trivial (date arithmetic, aggregation, multi-step filtering), extract it to a static engine method first, then test it there.
+
 ## Firebase-safe service singletons
 
 Any `@Observable` service singleton that uses Firestore **must** declare its `db` property with `@ObservationIgnored private lazy var` so initialization is deferred until the first network call. Without this, accessing the singleton during tests (where `FirebaseApp.configure()` is skipped) crashes the entire test process and fails all tests:
@@ -103,6 +113,22 @@ private let db = Firestore.firestore()
 ```
 
 When adding a new `@Observable` service that wraps Firestore, always use the lazy pattern. Tests for such services can only cover the pure state logic (properties, enums, methods that don't touch `db`).
+
+## Locale safety for localized strings
+
+`String(localized:)` in model computed properties reads from `Bundle.main` at runtime, which is the app bundle (not the test bundle). The active language is determined by `AppleLanguages` in `UserDefaults` — the same key the in-app language picker sets. If a developer or CI has selected a non-English language, the strings returned will be Spanish or Catalan, not English.
+
+**Never assert an exact English localized string in tests.** Instead, assert locale-independent invariants:
+
+| What to test | Bad (locale-dependent) | Good (locale-independent) |
+|---|---|---|
+| Number appears | `== "Every 8h"` | `.contains("8")` |
+| Branching (special case) | `== "Daily"` | `value1result != value2result` and `!result.contains("1")` |
+| Weekday symbol | `hasSuffix("Wed")` | `.contains(Calendar.current.shortWeekdaySymbols[3])` |
+| "Ongoing" suffix | `hasSuffix("ongoing")` | `ongoingParts[1] != resolvedParts[1]` |
+| Two-part structure | `!contains("ongoing")` | `parts.count == 2` + `!parts[0].isEmpty` |
+
+This rule applies to any test that calls a method using `String(localized:)` internally.
 
 ## Timezone safety
 
