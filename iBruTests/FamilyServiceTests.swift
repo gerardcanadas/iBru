@@ -6,7 +6,7 @@ import Foundation
 // Methods that write to Firestore (createFamily, joinFamily, inviteMember, fetchMembers)
 // require a live emulator and are not covered here.
 
-@Suite @MainActor
+@Suite(.serialized) @MainActor
 struct FamilyServiceTests {
 
     init() {

@@ -569,6 +569,22 @@
         }
       }
     },
+    "Coming soon" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aviat disponible"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximamente"
+          }
+        }
+      }
+    },
     "Daily" : {
       "localizations" : {
         "ca" : {
@@ -1121,6 +1137,38 @@
         }
       }
     },
+    "Growth" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creixement"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crecimiento"
+          }
+        }
+      }
+    },
+    "Growth tracking will let you log weight, height, and head circumference" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El seguiment del creixement us permetrà registrar el pes, l'alçada i el perímetre cranial"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El seguimiento del crecimiento te permitirá registrar el peso, la altura y el perímetro cefálico"
+          }
+        }
+      }
+    },
     "History" : {
       "localizations" : {
         "ca" : {
@@ -1133,6 +1181,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Historial"
+          }
+        }
+      }
+    },
+    "Home" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inici"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicio"
           }
         }
       }
@@ -2249,6 +2313,22 @@
         }
       }
     },
+    "Records" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registres"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registros"
+          }
+        }
+      }
+    },
     "Recovered" : {
       "localizations" : {
         "ca" : {
@@ -2904,6 +2984,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Próxima"
+          }
+        }
+      }
+    },
+    "Vaccine log will let you track upcoming and completed vaccines" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El registre de vacunes us permetrà fer el seguiment de les vacunes properes i les ja administrades"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El registro de vacunas te permitirá hacer el seguimiento de las vacunas próximas y las ya administradas"
+          }
+        }
+      }
+    },
+    "Vaccines" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vacunes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vacunas"
           }
         }
       }

@@ -11,24 +11,20 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             DashboardView(baby: activeBaby)
-                .tabItem { Label("Dashboard", systemImage: "heart.text.square.fill") }
+                .tabItem { Label("Home", systemImage: "house.fill") }
                 .tag(0)
 
-            TodayView(baby: activeBaby)
-                .tabItem { Label("Today", systemImage: "list.bullet.clipboard.fill") }
+            RecordsView(baby: activeBaby)
+                .tabItem { Label("Records", systemImage: "stethoscope") }
                 .tag(1)
 
-            MedicalHistoryView(baby: activeBaby)
-                .tabItem { Label("History", systemImage: "stethoscope") }
+            InsightsView(baby: activeBaby)
+                .tabItem { Label("Insights", systemImage: "chart.xyaxis.line") }
                 .tag(2)
 
             BabyListView(selectedBaby: $selectedBaby)
                 .tabItem { Label("Profiles", systemImage: "person.2.fill") }
                 .tag(3)
-
-            InsightsView(baby: activeBaby)
-                .tabItem { Label("Insights", systemImage: "chart.bar.xaxis") }
-                .tag(4)
         }
         .onChange(of: babies) { _, newBabies in
             if selectedBaby == nil || !newBabies.contains(where: { $0.persistentModelID == selectedBaby?.persistentModelID }) {
