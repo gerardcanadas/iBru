@@ -6,23 +6,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build (check for compiler errors)
-xcodebuild -scheme iBru -destination 'generic/platform=iOS Simulator' build 2>&1 | grep -E "error:|warning:|BUILD"
+xcodebuild -scheme iBru -destination 'generic/platform=iOS Simulator' build 2>&1 | grep -E "error:|BUILD"
 
-# Run tests (once a test target exists)
-xcodebuild -scheme iBru -destination 'platform=iOS Simulator,name=iPhone 16' test 2>&1 | grep -E "error:|Test (Suite|Case|Passed|Failed)|BUILD"
+# Run tests — do NOT pipe through grep; Swift Testing output won't match XCTest patterns
+xcodebuild test \
+  -project iBru.xcodeproj \
+  -scheme iBru \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  CODE_SIGNING_ALLOWED=NO
 ```
 
-Use the `/build` skill to run the build check and `/push` to commit and push.
+Use `/build` to run the compile check. Use `/push` to commit and push.
+
+## Tests are required with every change
+
+Every new model, computed property, utility method, or business-logic change **must** ship with unit tests. Tests live in `iBruTests/` (`<Feature>Tests.swift`). Use `/add-tests` for guidance on the test patterns used in this project. Run tests locally before pushing.
 
 ## Architecture
 
 ### Data layer
 
 **SwiftData** is the local store. Models live in `iBru/Models/`:
-- `Baby` — root entity; owns `plans` (cascade) and `illnesses` (cascade)
+- `Baby` — root entity; owns `plans`, `illnesses`, and `quickDoses` (all cascade)
 - `MedicationPlan` — belongs to one `Baby`; owns `records` (cascade); many-to-many `illnesses`
 - `DoseRecord` — belongs to one `MedicationPlan`; records a single dose event
 - `IllnessRecord` — belongs to one `Baby`; soft-links to `plans` (nullify on delete)
+- `QuickDoseRecord` — belongs to one `Baby`; records a one-off dose not tied to any plan
 
 Every model has `var id: String = UUID().uuidString` as its first property — this is the Firestore document key used for cross-device sync.
 
@@ -32,6 +42,7 @@ families/{familyId}/babies/{id}
 families/{familyId}/plans/{id}
 families/{familyId}/records/{id}
 families/{familyId}/illnesses/{id}
+families/{familyId}/quickDoses/{id}
 ```
 
 ### Services
