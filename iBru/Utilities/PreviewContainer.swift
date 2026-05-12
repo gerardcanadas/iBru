@@ -43,5 +43,15 @@ let previewContainer: ModelContainer = {
         ctx.insert(record)
     }
 
+    let quickDose = QuickDoseRecord(
+        medicationName: "Paracetamol",
+        doseAmount: 5,
+        doseUnit: "ml",
+        givenAt: Calendar.current.date(byAdding: .hour, value: -3, to: .now)!,
+        notes: "Fever at night"
+    )
+    quickDose.baby = baby
+    ctx.insert(quickDose)
+
     return container
 }()

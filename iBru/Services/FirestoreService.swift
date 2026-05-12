@@ -56,6 +56,21 @@ final class FirestoreService {
         ])
     }
 
+    func save(_ quick: QuickDoseRecord) async {
+        guard let ref = familyRef, let babyId = quick.baby?.id else { return }
+        let data: [String: Any] = [
+            "id": quick.id,
+            "babyId": babyId,
+            "medicationName": quick.medicationName,
+            "doseAmount": quick.doseAmount,
+            "doseUnit": quick.doseUnit,
+            "givenAt": Timestamp(date: quick.givenAt),
+            "notes": quick.notes,
+            "updatedAt": Timestamp()
+        ]
+        try? await ref.collection("quickDoses").document(quick.id).setData(data)
+    }
+
     func save(_ illness: IllnessRecord) async {
         guard let ref = familyRef, let babyId = illness.baby?.id else { return }
         var data: [String: Any] = [
@@ -93,6 +108,11 @@ final class FirestoreService {
         try? await ref.collection("illnesses").document(illnessId).delete()
     }
 
+    func delete(quickDoseId: String) async {
+        guard let ref = familyRef else { return }
+        try? await ref.collection("quickDoses").document(quickDoseId).delete()
+    }
+
     // MARK: - Sync
 
     @MainActor
@@ -104,6 +124,7 @@ final class FirestoreService {
         let plansSnap = try? await ref.collection("plans").getDocuments()
         let recordsSnap = try? await ref.collection("records").getDocuments()
         let illnessesSnap = try? await ref.collection("illnesses").getDocuments()
+        let quickDosesSnap = try? await ref.collection("quickDoses").getDocuments()
 
         // First setup: Firestore is empty, push local data up
         guard babiesSnap?.documents.isEmpty == false else {
@@ -115,16 +136,19 @@ final class FirestoreService {
         var plansByID: [String: MedicationPlan] = [:]
         var recordsByID: [String: DoseRecord] = [:]
         var illnessesByID: [String: IllnessRecord] = [:]
+        var quickDosesByID: [String: QuickDoseRecord] = [:]
 
         for b in (try? context.fetch(FetchDescriptor<Baby>())) ?? [] { babiesByID[b.id] = b }
         for p in (try? context.fetch(FetchDescriptor<MedicationPlan>())) ?? [] { plansByID[p.id] = p }
         for r in (try? context.fetch(FetchDescriptor<DoseRecord>())) ?? [] { recordsByID[r.id] = r }
         for i in (try? context.fetch(FetchDescriptor<IllnessRecord>())) ?? [] { illnessesByID[i.id] = i }
+        for q in (try? context.fetch(FetchDescriptor<QuickDoseRecord>())) ?? [] { quickDosesByID[q.id] = q }
 
         var seenBabies = Set<String>()
         var seenPlans = Set<String>()
         var seenRecords = Set<String>()
         var seenIllnesses = Set<String>()
+        var seenQuickDoses = Set<String>()
 
         for doc in babiesSnap?.documents ?? [] {
             let d = doc.data()
@@ -221,10 +245,33 @@ final class FirestoreService {
             }
         }
 
+        for doc in quickDosesSnap?.documents ?? [] {
+            let d = doc.data()
+            guard let id = d["id"] as? String,
+                  let babyId = d["babyId"] as? String,
+                  let name = d["medicationName"] as? String,
+                  let amount = d["doseAmount"] as? Double,
+                  let unit = d["doseUnit"] as? String,
+                  let givenAt = (d["givenAt"] as? Timestamp)?.dateValue() else { continue }
+            seenQuickDoses.insert(id)
+            let notes = d["notes"] as? String ?? ""
+            if let existing = quickDosesByID[id] {
+                existing.medicationName = name; existing.doseAmount = amount
+                existing.doseUnit = unit; existing.givenAt = givenAt; existing.notes = notes
+            } else {
+                let q = QuickDoseRecord(medicationName: name, doseAmount: amount, doseUnit: unit, givenAt: givenAt, notes: notes)
+                q.id = id
+                q.baby = babiesByID[babyId]
+                context.insert(q)
+                quickDosesByID[id] = q
+            }
+        }
+
         for (id, b) in babiesByID where !seenBabies.contains(id) { context.delete(b) }
         for (id, p) in plansByID where !seenPlans.contains(id) { context.delete(p) }
         for (id, r) in recordsByID where !seenRecords.contains(id) { context.delete(r) }
         for (id, i) in illnessesByID where !seenIllnesses.contains(id) { context.delete(i) }
+        for (id, q) in quickDosesByID where !seenQuickDoses.contains(id) { context.delete(q) }
     }
 
     // MARK: - Ensure migrated records have stable IDs
@@ -244,6 +291,9 @@ final class FirestoreService {
         for i in (try? context.fetch(FetchDescriptor<IllnessRecord>())) ?? [] where i.id.isEmpty {
             i.id = UUID().uuidString; changed = true
         }
+        for q in (try? context.fetch(FetchDescriptor<QuickDoseRecord>())) ?? [] where q.id.isEmpty {
+            q.id = UUID().uuidString; changed = true
+        }
         if changed { try? context.save() }
     }
 
@@ -255,9 +305,11 @@ final class FirestoreService {
         let plans = (try? context.fetch(FetchDescriptor<MedicationPlan>())) ?? []
         let records = (try? context.fetch(FetchDescriptor<DoseRecord>())) ?? []
         let illnesses = (try? context.fetch(FetchDescriptor<IllnessRecord>())) ?? []
+        let quickDoses = (try? context.fetch(FetchDescriptor<QuickDoseRecord>())) ?? []
         for b in babies { await save(b) }
         for p in plans { await save(p) }
         for r in records { await save(r) }
         for i in illnesses { await save(i) }
+        for q in quickDoses { await save(q) }
     }
 }
