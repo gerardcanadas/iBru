@@ -5,6 +5,8 @@ import SwiftData
 struct iBruApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    private let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
     private let container: ModelContainer = {
         let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self])
         let config = ModelConfiguration(schema: schema)
@@ -13,12 +15,14 @@ struct iBruApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .modelContainer(container)
-                .task {
-                    appDelegate.modelContainer = container
-                    NotificationManager.shared.requestPermission()
-                }
+            if !isTesting {
+                RootView()
+                    .modelContainer(container)
+                    .task {
+                        appDelegate.modelContainer = container
+                        NotificationManager.shared.requestPermission()
+                    }
+            }
         }
     }
 }
