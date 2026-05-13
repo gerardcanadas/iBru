@@ -47,19 +47,9 @@ struct RecordsView: View {
         case .illness:
             IllnessListView(baby: baby)
         case .growth:
-            ContentUnavailableView(
-                "Coming soon",
-                systemImage: "ruler",
-                description: Text("Growth tracking will let you log weight, height, and head circumference")
-            )
-            .navigationTitle("Growth")
+            GrowthListView(baby: baby)
         case .vaccines:
-            ContentUnavailableView(
-                "Coming soon",
-                systemImage: "syringe",
-                description: Text("Vaccine log will let you track upcoming and completed vaccines")
-            )
-            .navigationTitle("Vaccines")
+            VaccineListView(baby: baby)
         }
     }
 }

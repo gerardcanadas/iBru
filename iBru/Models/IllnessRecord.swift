@@ -14,6 +14,9 @@ final class IllnessRecord {
     @Relationship
     var plans: [MedicationPlan] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \TemperatureReading.illness)
+    var temperatures: [TemperatureReading] = []
+
     init(title: String = "", startDate: Date = .now, endDate: Date? = nil, notes: String = "") {
         self.title = title
         self.startDate = startDate

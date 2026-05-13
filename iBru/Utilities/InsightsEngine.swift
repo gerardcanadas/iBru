@@ -5,6 +5,7 @@ import Foundation
 enum InsightsQueryType: String, CaseIterable, Identifiable {
     case medications = "Medications"
     case illnesses   = "Illnesses"
+    case growth      = "Growth"
     var id: String { rawValue }
 }
 
@@ -56,6 +57,24 @@ struct IllnessInsightResult {
     let longIllnessCount: Int
     let averageDurationDays: Double
     let illnesses: [IllnessSnapshot]
+}
+
+// MARK: - Growth types
+
+struct GrowthSnapshot: Identifiable {
+    let id: String
+    let date: Date
+    let weightKg: Double?
+    let heightCm: Double?
+    let headCircumferenceCm: Double?
+    let summary: String
+}
+
+struct GrowthInsightResult {
+    let snapshots: [GrowthSnapshot]
+    let latestWeight: Double?
+    let latestHeight: Double?
+    let latestHeadCircumference: Double?
 }
 
 // MARK: - Engine
@@ -134,6 +153,20 @@ enum InsightsEngine {
             firstDate:      sorted.first?.date,
             lastDate:       sorted.last?.date,
             events:         sorted
+        )
+    }
+
+    static func growthInsights(
+        snapshots: [GrowthSnapshot],
+        range: ClosedRange<Date>
+    ) -> GrowthInsightResult {
+        let filtered = snapshots.filter { range.contains($0.date) }
+        let sorted = filtered.sorted { $0.date < $1.date }
+        return GrowthInsightResult(
+            snapshots: sorted,
+            latestWeight: sorted.last(where: { $0.weightKg != nil })?.weightKg,
+            latestHeight: sorted.last(where: { $0.heightCm != nil })?.heightCm,
+            latestHeadCircumference: sorted.last(where: { $0.headCircumferenceCm != nil })?.headCircumferenceCm
         )
     }
 

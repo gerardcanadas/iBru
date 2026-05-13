@@ -13,6 +13,7 @@ struct MedicationPlanTests {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         container = try ModelContainer(
             for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
+            QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self, GrowthRecord.self,
             configurations: config
         )
         context = ModelContext(container)
@@ -129,6 +130,7 @@ struct IllnessRecordTests {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         container = try ModelContainer(
             for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
+            QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self, GrowthRecord.self,
             configurations: config
         )
         context = ModelContext(container)

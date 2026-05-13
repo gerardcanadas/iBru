@@ -3,7 +3,10 @@ import SwiftData
 
 struct IllnessDetailView: View {
     @Bindable var record: IllnessRecord
+    @Environment(\.modelContext) private var modelContext
     @State private var showingEdit = false
+    @State private var showingAddTemperature = false
+    @State private var editingTemperature: TemperatureReading?
 
     private var durationText: String {
         guard let end = record.endDate else { return String(localized: "Ongoing") }
@@ -43,6 +46,41 @@ struct IllnessDetailView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                }
+            }
+
+            Section("Temperature") {
+                ForEach(record.temperatures.sorted { $0.date > $1.date }) { temp in
+                    Button { editingTemperature = temp } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(temp.displayValue)
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.primary)
+                                if let label = temp.feverLabel {
+                                    Text(label)
+                                        .font(.caption)
+                                        .foregroundStyle(.orange)
+                                }
+                            }
+                            Spacer()
+                            Text(temp.date, format: .dateTime.day().month().hour().minute())
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            let id = temp.id
+                            modelContext.delete(temp)
+                            Task { await FirestoreService.shared.delete(temperatureId: id) }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
+                Button { showingAddTemperature = true } label: {
+                    Label("Log Temperature", systemImage: "thermometer")
                 }
             }
 
@@ -98,6 +136,12 @@ struct IllnessDetailView: View {
         }
         .sheet(isPresented: $showingEdit) {
             IllnessFormView(baby: record.baby!, illness: record)
+        }
+        .sheet(isPresented: $showingAddTemperature) {
+            TemperatureFormView(illness: record)
+        }
+        .sheet(item: $editingTemperature) { temp in
+            TemperatureFormView(illness: record, temperature: temp)
         }
     }
 }

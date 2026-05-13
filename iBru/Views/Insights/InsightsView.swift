@@ -26,6 +26,7 @@ struct InsightsView: View {
                         switch queryType {
                         case .medications: medicationResultsSection
                         case .illnesses:   illnessResultsSection
+                        case .growth:      growthResultsSection
                         }
                     }
                 }
@@ -95,6 +96,19 @@ struct InsightsView: View {
         return events
     }
 
+    private var allGrowthSnapshots: [GrowthSnapshot] {
+        (baby?.growthRecords ?? []).map { r in
+            GrowthSnapshot(
+                id: r.id,
+                date: r.date,
+                weightKg: r.weightKg,
+                heightCm: r.heightCm,
+                headCircumferenceCm: r.headCircumferenceCm,
+                summary: r.summary
+            )
+        }
+    }
+
     private var allIllnessSnapshots: [IllnessSnapshot] {
         (baby?.illnesses ?? []).map { illness in
             IllnessSnapshot(
@@ -118,6 +132,10 @@ struct InsightsView: View {
 
     private var illnessResult: IllnessInsightResult {
         InsightsEngine.illnessInsights(illnesses: allIllnessSnapshots, keyword: keyword, range: currentDateRange)
+    }
+
+    private var growthResult: GrowthInsightResult {
+        InsightsEngine.growthInsights(snapshots: allGrowthSnapshots, range: currentDateRange)
     }
 
     // MARK: - Medication results
@@ -192,6 +210,53 @@ struct InsightsView: View {
         }
     }
 
+    // MARK: - Growth results
+
+    @ViewBuilder
+    private var growthResultsSection: some View {
+        let result = growthResult
+        if result.snapshots.isEmpty {
+            ContentUnavailableView(
+                "No results",
+                systemImage: "ruler",
+                description: Text("No growth records for this period.")
+            )
+            .padding(.top, 24)
+        } else {
+            HStack(spacing: 12) {
+                if let w = result.latestWeight {
+                    InsightStatCard(value: String(format: "%.1f kg", w), label: "Weight", color: .blue)
+                }
+                if let h = result.latestHeight {
+                    InsightStatCard(value: String(format: "%.1f cm", h), label: "Height", color: .green)
+                }
+                if let hc = result.latestHeadCircumference {
+                    InsightStatCard(value: String(format: "%.1f cm", hc), label: "Head", color: .purple)
+                }
+            }
+
+            growthChart(result: result)
+
+            recordList {
+                ForEach(result.snapshots.reversed()) { snapshot in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(snapshot.date, format: .dateTime.day().month().year())
+                                .font(.subheadline.weight(.medium))
+                            Text(snapshot.summary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    if snapshot.id != result.snapshots.first?.id { Divider().padding(.leading, 14) }
+                }
+            }
+        }
+    }
+
     // MARK: - Shared list container
 
     private func recordList<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -244,6 +309,33 @@ struct InsightsView: View {
             }
             .chartXAxis { AxisMarks(values: .stride(by: .month, count: 1)) }
             .frame(height: 160)
+        }
+    }
+
+    private func growthChart(result: GrowthInsightResult) -> some View {
+        let weightPoints = result.snapshots.filter { $0.weightKg != nil }
+        return Group {
+            if weightPoints.count >= 2 {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Weight over time")
+                        .font(.headline)
+                        .padding(.top, 8)
+                    Chart(weightPoints) { snapshot in
+                        LineMark(
+                            x: .value("Date", snapshot.date),
+                            y: .value("kg", snapshot.weightKg!)
+                        )
+                        .foregroundStyle(Color.blue)
+                        PointMark(
+                            x: .value("Date", snapshot.date),
+                            y: .value("kg", snapshot.weightKg!)
+                        )
+                        .foregroundStyle(Color.blue)
+                    }
+                    .chartYAxisLabel("kg")
+                    .frame(height: 180)
+                }
+            }
         }
     }
 

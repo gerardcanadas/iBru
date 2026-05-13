@@ -86,6 +86,47 @@ final class FirestoreService {
         try? await ref.collection("illnesses").document(illness.id).setData(data)
     }
 
+    func save(_ temp: TemperatureReading) async {
+        guard let ref = familyRef, let illnessId = temp.illness?.id else { return }
+        try? await ref.collection("temperatures").document(temp.id).setData([
+            "id": temp.id,
+            "illnessId": illnessId,
+            "date": Timestamp(date: temp.date),
+            "valueCelsius": temp.valueCelsius,
+            "notes": temp.notes,
+            "updatedAt": Timestamp()
+        ])
+    }
+
+    func save(_ vaccine: VaccineRecord) async {
+        guard let ref = familyRef, let babyId = vaccine.baby?.id else { return }
+        var data: [String: Any] = [
+            "id": vaccine.id,
+            "babyId": babyId,
+            "name": vaccine.name,
+            "recommendedAgeDays": vaccine.recommendedAgeDays,
+            "notes": vaccine.notes,
+            "updatedAt": Timestamp()
+        ]
+        if let given = vaccine.givenDate { data["givenDate"] = Timestamp(date: given) }
+        try? await ref.collection("vaccines").document(vaccine.id).setData(data)
+    }
+
+    func save(_ growth: GrowthRecord) async {
+        guard let ref = familyRef, let babyId = growth.baby?.id else { return }
+        var data: [String: Any] = [
+            "id": growth.id,
+            "babyId": babyId,
+            "date": Timestamp(date: growth.date),
+            "notes": growth.notes,
+            "updatedAt": Timestamp()
+        ]
+        if let w = growth.weightKg { data["weightKg"] = w }
+        if let h = growth.heightCm { data["heightCm"] = h }
+        if let hc = growth.headCircumferenceCm { data["headCircumferenceCm"] = hc }
+        try? await ref.collection("growth").document(growth.id).setData(data)
+    }
+
     // MARK: - Delete
 
     func delete(babyId: String) async {
@@ -113,6 +154,21 @@ final class FirestoreService {
         try? await ref.collection("quickDoses").document(quickDoseId).delete()
     }
 
+    func delete(temperatureId: String) async {
+        guard let ref = familyRef else { return }
+        try? await ref.collection("temperatures").document(temperatureId).delete()
+    }
+
+    func delete(vaccineId: String) async {
+        guard let ref = familyRef else { return }
+        try? await ref.collection("vaccines").document(vaccineId).delete()
+    }
+
+    func delete(growthId: String) async {
+        guard let ref = familyRef else { return }
+        try? await ref.collection("growth").document(growthId).delete()
+    }
+
     // MARK: - Sync
 
     @MainActor
@@ -120,37 +176,47 @@ final class FirestoreService {
         ensureStableIDs(context: context)
         guard let ref = familyRef else { return }
 
-        let babiesSnap = try? await ref.collection("babies").getDocuments()
-        let plansSnap = try? await ref.collection("plans").getDocuments()
-        let recordsSnap = try? await ref.collection("records").getDocuments()
-        let illnessesSnap = try? await ref.collection("illnesses").getDocuments()
-        let quickDosesSnap = try? await ref.collection("quickDoses").getDocuments()
+        let babiesSnap      = try? await ref.collection("babies").getDocuments()
+        let plansSnap       = try? await ref.collection("plans").getDocuments()
+        let recordsSnap     = try? await ref.collection("records").getDocuments()
+        let illnessesSnap   = try? await ref.collection("illnesses").getDocuments()
+        let quickDosesSnap  = try? await ref.collection("quickDoses").getDocuments()
+        let temperaturesSnap = try? await ref.collection("temperatures").getDocuments()
+        let vaccinesSnap    = try? await ref.collection("vaccines").getDocuments()
+        let growthSnap      = try? await ref.collection("growth").getDocuments()
 
-        // If fetch failed (e.g. permission denied), bail without touching local data
         guard let babyDocs = babiesSnap?.documents else { return }
-        // First setup: Firestore is empty, push local data up
         guard !babyDocs.isEmpty else {
             await pushAll(context: context)
             return
         }
 
-        var babiesByID: [String: Baby] = [:]
-        var plansByID: [String: MedicationPlan] = [:]
-        var recordsByID: [String: DoseRecord] = [:]
-        var illnessesByID: [String: IllnessRecord] = [:]
-        var quickDosesByID: [String: QuickDoseRecord] = [:]
+        var babiesByID:       [String: Baby]              = [:]
+        var plansByID:        [String: MedicationPlan]    = [:]
+        var recordsByID:      [String: DoseRecord]        = [:]
+        var illnessesByID:    [String: IllnessRecord]     = [:]
+        var quickDosesByID:   [String: QuickDoseRecord]   = [:]
+        var temperaturesByID: [String: TemperatureReading] = [:]
+        var vaccinesByID:     [String: VaccineRecord]     = [:]
+        var growthByID:       [String: GrowthRecord]      = [:]
 
-        for b in (try? context.fetch(FetchDescriptor<Baby>())) ?? [] { babiesByID[b.id] = b }
-        for p in (try? context.fetch(FetchDescriptor<MedicationPlan>())) ?? [] { plansByID[p.id] = p }
-        for r in (try? context.fetch(FetchDescriptor<DoseRecord>())) ?? [] { recordsByID[r.id] = r }
-        for i in (try? context.fetch(FetchDescriptor<IllnessRecord>())) ?? [] { illnessesByID[i.id] = i }
-        for q in (try? context.fetch(FetchDescriptor<QuickDoseRecord>())) ?? [] { quickDosesByID[q.id] = q }
+        for b in (try? context.fetch(FetchDescriptor<Baby>())) ?? []             { babiesByID[b.id]       = b }
+        for p in (try? context.fetch(FetchDescriptor<MedicationPlan>())) ?? []   { plansByID[p.id]        = p }
+        for r in (try? context.fetch(FetchDescriptor<DoseRecord>())) ?? []       { recordsByID[r.id]      = r }
+        for i in (try? context.fetch(FetchDescriptor<IllnessRecord>())) ?? []    { illnessesByID[i.id]    = i }
+        for q in (try? context.fetch(FetchDescriptor<QuickDoseRecord>())) ?? []  { quickDosesByID[q.id]   = q }
+        for t in (try? context.fetch(FetchDescriptor<TemperatureReading>())) ?? [] { temperaturesByID[t.id] = t }
+        for v in (try? context.fetch(FetchDescriptor<VaccineRecord>())) ?? []    { vaccinesByID[v.id]     = v }
+        for g in (try? context.fetch(FetchDescriptor<GrowthRecord>())) ?? []     { growthByID[g.id]       = g }
 
-        var seenBabies = Set<String>()
-        var seenPlans = Set<String>()
-        var seenRecords = Set<String>()
-        var seenIllnesses = Set<String>()
-        var seenQuickDoses = Set<String>()
+        var seenBabies       = Set<String>()
+        var seenPlans        = Set<String>()
+        var seenRecords      = Set<String>()
+        var seenIllnesses    = Set<String>()
+        var seenQuickDoses   = Set<String>()
+        var seenTemperatures = Set<String>()
+        var seenVaccines     = Set<String>()
+        var seenGrowth       = Set<String>()
 
         for doc in babyDocs {
             let d = doc.data()
@@ -269,11 +335,76 @@ final class FirestoreService {
             }
         }
 
-        for (id, b) in babiesByID where !seenBabies.contains(id) { context.delete(b) }
-        for (id, p) in plansByID where !seenPlans.contains(id) { context.delete(p) }
-        for (id, r) in recordsByID where !seenRecords.contains(id) { context.delete(r) }
-        for (id, i) in illnessesByID where !seenIllnesses.contains(id) { context.delete(i) }
-        for (id, q) in quickDosesByID where !seenQuickDoses.contains(id) { context.delete(q) }
+        for doc in temperaturesSnap?.documents ?? [] {
+            let d = doc.data()
+            guard let id = d["id"] as? String,
+                  let illnessId = d["illnessId"] as? String,
+                  let date = (d["date"] as? Timestamp)?.dateValue(),
+                  let valueCelsius = d["valueCelsius"] as? Double else { continue }
+            seenTemperatures.insert(id)
+            let notes = d["notes"] as? String ?? ""
+            if let temp = temperaturesByID[id] {
+                temp.date = date; temp.valueCelsius = valueCelsius; temp.notes = notes
+            } else {
+                let temp = TemperatureReading(date: date, valueCelsius: valueCelsius, notes: notes)
+                temp.id = id
+                temp.illness = illnessesByID[illnessId]
+                context.insert(temp)
+                temperaturesByID[id] = temp
+            }
+        }
+
+        for doc in vaccinesSnap?.documents ?? [] {
+            let d = doc.data()
+            guard let id = d["id"] as? String,
+                  let babyId = d["babyId"] as? String,
+                  let name = d["name"] as? String,
+                  let recommendedAgeDays = d["recommendedAgeDays"] as? Int else { continue }
+            seenVaccines.insert(id)
+            let notes = d["notes"] as? String ?? ""
+            let givenDate = (d["givenDate"] as? Timestamp)?.dateValue()
+            if let vaccine = vaccinesByID[id] {
+                vaccine.name = name; vaccine.recommendedAgeDays = recommendedAgeDays
+                vaccine.givenDate = givenDate; vaccine.notes = notes
+            } else {
+                let vaccine = VaccineRecord(name: name, recommendedAgeDays: recommendedAgeDays, givenDate: givenDate, notes: notes)
+                vaccine.id = id
+                vaccine.baby = babiesByID[babyId]
+                context.insert(vaccine)
+                vaccinesByID[id] = vaccine
+            }
+        }
+
+        for doc in growthSnap?.documents ?? [] {
+            let d = doc.data()
+            guard let id = d["id"] as? String,
+                  let babyId = d["babyId"] as? String,
+                  let date = (d["date"] as? Timestamp)?.dateValue() else { continue }
+            seenGrowth.insert(id)
+            let notes = d["notes"] as? String ?? ""
+            let weightKg = d["weightKg"] as? Double
+            let heightCm = d["heightCm"] as? Double
+            let headCircumferenceCm = d["headCircumferenceCm"] as? Double
+            if let growth = growthByID[id] {
+                growth.date = date; growth.weightKg = weightKg; growth.heightCm = heightCm
+                growth.headCircumferenceCm = headCircumferenceCm; growth.notes = notes
+            } else {
+                let growth = GrowthRecord(date: date, weightKg: weightKg, heightCm: heightCm, headCircumferenceCm: headCircumferenceCm, notes: notes)
+                growth.id = id
+                growth.baby = babiesByID[babyId]
+                context.insert(growth)
+                growthByID[id] = growth
+            }
+        }
+
+        for (id, b) in babiesByID       where !seenBabies.contains(id)       { context.delete(b) }
+        for (id, p) in plansByID        where !seenPlans.contains(id)        { context.delete(p) }
+        for (id, r) in recordsByID      where !seenRecords.contains(id)      { context.delete(r) }
+        for (id, i) in illnessesByID    where !seenIllnesses.contains(id)    { context.delete(i) }
+        for (id, q) in quickDosesByID   where !seenQuickDoses.contains(id)   { context.delete(q) }
+        for (id, t) in temperaturesByID where !seenTemperatures.contains(id) { context.delete(t) }
+        for (id, v) in vaccinesByID     where !seenVaccines.contains(id)     { context.delete(v) }
+        for (id, g) in growthByID       where !seenGrowth.contains(id)       { context.delete(g) }
     }
 
     // MARK: - Ensure migrated records have stable IDs
@@ -281,21 +412,14 @@ final class FirestoreService {
     @MainActor
     private func ensureStableIDs(context: ModelContext) {
         var changed = false
-        for b in (try? context.fetch(FetchDescriptor<Baby>())) ?? [] where b.id.isEmpty {
-            b.id = UUID().uuidString; changed = true
-        }
-        for p in (try? context.fetch(FetchDescriptor<MedicationPlan>())) ?? [] where p.id.isEmpty {
-            p.id = UUID().uuidString; changed = true
-        }
-        for r in (try? context.fetch(FetchDescriptor<DoseRecord>())) ?? [] where r.id.isEmpty {
-            r.id = UUID().uuidString; changed = true
-        }
-        for i in (try? context.fetch(FetchDescriptor<IllnessRecord>())) ?? [] where i.id.isEmpty {
-            i.id = UUID().uuidString; changed = true
-        }
-        for q in (try? context.fetch(FetchDescriptor<QuickDoseRecord>())) ?? [] where q.id.isEmpty {
-            q.id = UUID().uuidString; changed = true
-        }
+        for b in (try? context.fetch(FetchDescriptor<Baby>())) ?? []              where b.id.isEmpty { b.id = UUID().uuidString; changed = true }
+        for p in (try? context.fetch(FetchDescriptor<MedicationPlan>())) ?? []    where p.id.isEmpty { p.id = UUID().uuidString; changed = true }
+        for r in (try? context.fetch(FetchDescriptor<DoseRecord>())) ?? []        where r.id.isEmpty { r.id = UUID().uuidString; changed = true }
+        for i in (try? context.fetch(FetchDescriptor<IllnessRecord>())) ?? []     where i.id.isEmpty { i.id = UUID().uuidString; changed = true }
+        for q in (try? context.fetch(FetchDescriptor<QuickDoseRecord>())) ?? []   where q.id.isEmpty { q.id = UUID().uuidString; changed = true }
+        for t in (try? context.fetch(FetchDescriptor<TemperatureReading>())) ?? [] where t.id.isEmpty { t.id = UUID().uuidString; changed = true }
+        for v in (try? context.fetch(FetchDescriptor<VaccineRecord>())) ?? []     where v.id.isEmpty { v.id = UUID().uuidString; changed = true }
+        for g in (try? context.fetch(FetchDescriptor<GrowthRecord>())) ?? []      where g.id.isEmpty { g.id = UUID().uuidString; changed = true }
         if changed { try? context.save() }
     }
 
@@ -303,15 +427,21 @@ final class FirestoreService {
 
     @MainActor
     private func pushAll(context: ModelContext) async {
-        let babies = (try? context.fetch(FetchDescriptor<Baby>())) ?? []
-        let plans = (try? context.fetch(FetchDescriptor<MedicationPlan>())) ?? []
-        let records = (try? context.fetch(FetchDescriptor<DoseRecord>())) ?? []
-        let illnesses = (try? context.fetch(FetchDescriptor<IllnessRecord>())) ?? []
-        let quickDoses = (try? context.fetch(FetchDescriptor<QuickDoseRecord>())) ?? []
-        for b in babies { await save(b) }
-        for p in plans { await save(p) }
-        for r in records { await save(r) }
-        for i in illnesses { await save(i) }
-        for q in quickDoses { await save(q) }
+        let babies       = (try? context.fetch(FetchDescriptor<Baby>())) ?? []
+        let plans        = (try? context.fetch(FetchDescriptor<MedicationPlan>())) ?? []
+        let records      = (try? context.fetch(FetchDescriptor<DoseRecord>())) ?? []
+        let illnesses    = (try? context.fetch(FetchDescriptor<IllnessRecord>())) ?? []
+        let quickDoses   = (try? context.fetch(FetchDescriptor<QuickDoseRecord>())) ?? []
+        let temperatures = (try? context.fetch(FetchDescriptor<TemperatureReading>())) ?? []
+        let vaccines     = (try? context.fetch(FetchDescriptor<VaccineRecord>())) ?? []
+        let growth       = (try? context.fetch(FetchDescriptor<GrowthRecord>())) ?? []
+        for b in babies       { await save(b) }
+        for p in plans        { await save(p) }
+        for r in records      { await save(r) }
+        for i in illnesses    { await save(i) }
+        for q in quickDoses   { await save(q) }
+        for t in temperatures { await save(t) }
+        for v in vaccines     { await save(v) }
+        for g in growth       { await save(g) }
     }
 }

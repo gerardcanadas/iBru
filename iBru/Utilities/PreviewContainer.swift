@@ -6,6 +6,7 @@ let previewContainer: ModelContainer = {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(
         for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self,
+        TemperatureReading.self, VaccineRecord.self, GrowthRecord.self,
         configurations: config
     )
     let ctx = container.mainContext
@@ -74,6 +75,26 @@ let previewContainer: ModelContainer = {
     let feverEnd   = Calendar.current.date(byAdding: .day, value: -55, to: .now)!
     let fever = IllnessRecord(title: "Fever", startDate: feverStart, endDate: feverEnd)
     fever.baby = baby; ctx.insert(fever)
+
+    // Sample temperature readings for the bronchitis illness
+    let temp1 = TemperatureReading(date: Calendar.current.date(byAdding: .hour, value: -48, to: .now)!, valueCelsius: 38.2)
+    temp1.illness = bronch; ctx.insert(temp1)
+    let temp2 = TemperatureReading(date: Calendar.current.date(byAdding: .hour, value: -24, to: .now)!, valueCelsius: 37.8)
+    temp2.illness = bronch; ctx.insert(temp2)
+
+    // Sample vaccines
+    let mmr = VaccineRecord(name: "MMR", recommendedAgeDays: 365)
+    mmr.baby = baby; ctx.insert(mmr)
+    let dtap = VaccineRecord(name: "DTaP-1", recommendedAgeDays: 60, givenDate: Calendar.current.date(byAdding: .day, value: -30, to: .now)!)
+    dtap.baby = baby; ctx.insert(dtap)
+
+    // Sample growth records
+    let g1 = GrowthRecord(date: Calendar.current.date(byAdding: .day, value: -60, to: .now)!, weightKg: 5.5, heightCm: 60.0, headCircumferenceCm: 40.0)
+    g1.baby = baby; ctx.insert(g1)
+    let g2 = GrowthRecord(date: Calendar.current.date(byAdding: .day, value: -30, to: .now)!, weightKg: 6.2, heightCm: 63.0)
+    g2.baby = baby; ctx.insert(g2)
+    let g3 = GrowthRecord(date: .now, weightKg: 6.8, heightCm: 65.5, headCircumferenceCm: 42.0)
+    g3.baby = baby; ctx.insert(g3)
 
     return container
 }()

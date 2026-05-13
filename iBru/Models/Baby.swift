@@ -17,6 +17,12 @@ final class Baby {
     @Relationship(deleteRule: .cascade, inverse: \QuickDoseRecord.baby)
     var quickDoses: [QuickDoseRecord] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \VaccineRecord.baby)
+    var vaccines: [VaccineRecord] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \GrowthRecord.baby)
+    var growthRecords: [GrowthRecord] = []
+
     init(name: String, birthDate: Date, colorHex: String = "#5B8DEF") {
         self.name = name
         self.birthDate = birthDate
