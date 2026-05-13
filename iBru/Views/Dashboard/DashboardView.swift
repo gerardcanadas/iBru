@@ -119,6 +119,7 @@ struct DashboardView: View {
             Circle()
                 .fill(accentColor)
                 .frame(width: 52, height: 52)
+                .shadow(color: accentColor.opacity(0.35), radius: 8, x: 0, y: 4)
                 .overlay(
                     Text(baby.name.prefix(1).uppercased())
                         .font(.title3.bold())
@@ -166,7 +167,8 @@ struct DashboardView: View {
             Label("Quick Dose", systemImage: "pills.fill")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.borderedProminent)
+        .tint(accentColor)
     }
 
     private func quickDosesSection(_ baby: Baby) -> some View {
@@ -271,7 +273,7 @@ private struct StatusPillView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(.regularMaterial)
+        .background(color.opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }

@@ -73,11 +73,11 @@ struct MedicationCardView: View {
             }
         }
         .padding()
-        .background(.regularMaterial)
+        .background(accentColor.opacity(0.07))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(isOverdue ? Color.orange.opacity(0.4) : Color.clear, lineWidth: 1.5)
+                .stroke(isOverdue ? Color.orange.opacity(0.5) : accentColor.opacity(0.25), lineWidth: 1.5)
         )
     }
 }
