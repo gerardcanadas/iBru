@@ -5,6 +5,7 @@ struct ContentView: View {
     @Query(sort: \Baby.name) private var babies: [Baby]
     @State private var selectedBaby: Baby?
     @State private var selectedTab: Int = 0
+    @AppStorage("ibru_hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
 
     var activeBaby: Baby? { selectedBaby ?? babies.first }
 
@@ -30,6 +31,12 @@ struct ContentView: View {
             if selectedBaby == nil || !newBabies.contains(where: { $0.persistentModelID == selectedBaby?.persistentModelID }) {
                 selectedBaby = newBabies.first
             }
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { !hasCompletedOnboarding },
+            set: { if !$0 { hasCompletedOnboarding = true } }
+        )) {
+            OnboardingView { hasCompletedOnboarding = true }
         }
     }
 }
