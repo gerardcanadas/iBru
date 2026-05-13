@@ -55,8 +55,8 @@ struct OnboardingView: View {
                 topBar
 
                 TabView(selection: $currentPage) {
-                    ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
-                        pageContent(page)
+                    ForEach(0..<pages.count, id: \.self) { index in
+                        pageContent(pages[index])
                             .tag(index)
                     }
                 }

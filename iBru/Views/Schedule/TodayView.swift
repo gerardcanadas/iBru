@@ -37,11 +37,7 @@ struct TodayView: View {
                 } else {
                     List {
                         ForEach(groupedItems, id: \.plan.persistentModelID) { group in
-                            Section(group.plan.medicationName) {
-                                ForEach(group.items) { item in
-                                    DoseRowView(slot: item.slot, plan: item.plan)
-                                }
-                            }
+                            PlanGroupSection(group: group)
                         }
                     }
                 }
@@ -62,6 +58,18 @@ struct TodayView: View {
     private struct PlanGroup {
         let plan: MedicationPlan
         let items: [DoseItem]
+    }
+
+    // Extracted to avoid ChartContentBuilder ambiguity in Xcode 16
+    private struct PlanGroupSection: View {
+        let group: PlanGroup
+        var body: some View {
+            Section(group.plan.medicationName) {
+                ForEach(group.items) { item in
+                    DoseRowView(slot: item.slot, plan: item.plan)
+                }
+            }
+        }
     }
 
     private var groupedItems: [PlanGroup] {
