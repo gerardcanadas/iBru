@@ -99,17 +99,25 @@ struct HistoryView: View {
         return groups
     }
 
-    @ViewBuilder
-    private func doseRow(_ entry: SlotEntry) -> some View {
-        HStack {
-            Image(systemName: entry.status.icon)
-                .foregroundStyle(entry.status.color)
-            Text(entry.time, style: .time)
-                .font(.subheadline)
-            Spacer()
-            Text(entry.status.label)
-                .font(.caption)
-                .foregroundStyle(entry.status.color)
+    // Extracted into a struct to avoid ChartContentBuilder ambiguity in Xcode 16
+    private struct DaySection: View {
+        let group: DayGroup
+
+        var body: some View {
+            Section(group.id.formatted(date: .complete, time: .omitted)) {
+                ForEach(group.slots) { entry in
+                    HStack {
+                        Image(systemName: entry.status.icon)
+                            .foregroundStyle(entry.status.color)
+                        Text(entry.time, style: .time)
+                            .font(.subheadline)
+                        Spacer()
+                        Text(entry.status.label)
+                            .font(.caption)
+                            .foregroundStyle(entry.status.color)
+                    }
+                }
+            }
         }
     }
 
@@ -142,21 +150,13 @@ struct HistoryView: View {
             if !upcomingGroups.isEmpty {
                 Section("Upcoming") {}
                 ForEach(upcomingGroups) { group in
-                    Section(group.id.formatted(date: .complete, time: .omitted)) {
-                        ForEach(group.slots) { entry in
-                            doseRow(entry)
-                        }
-                    }
+                    DaySection(group: group)
                 }
             }
 
             Section("History") {}
             ForEach(historyGroups) { group in
-                Section(group.id.formatted(date: .complete, time: .omitted)) {
-                    ForEach(group.slots) { entry in
-                        doseRow(entry)
-                    }
-                }
+                DaySection(group: group)
             }
         }
         .navigationTitle(plan.medicationName)
