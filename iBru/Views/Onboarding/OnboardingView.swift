@@ -55,10 +55,12 @@ struct OnboardingView: View {
                 topBar
 
                 TabView(selection: $currentPage) {
-                    ForEach(0..<pages.count, id: \.self) { index in
-                        pageContent(pages[index])
-                            .tag(index)
-                    }
+                    pageContent(pages[0]).tag(0)
+                    pageContent(pages[1]).tag(1)
+                    pageContent(pages[2]).tag(2)
+                    pageContent(pages[3]).tag(3)
+                    pageContent(pages[4]).tag(4)
+                    pageContent(pages[5]).tag(5)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.easeInOut, value: currentPage)
