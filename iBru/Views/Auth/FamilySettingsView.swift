@@ -4,8 +4,9 @@ struct FamilySettingsView: View {
     private var family = FamilyService.shared
     private var auth = AuthService.shared
 
-    @AppStorage("ibru_colorScheme") private var colorSchemeRaw: String = "system"
-    @AppStorage("ibru_language")    private var languageRaw: String = "system"
+    @AppStorage("ibru_colorScheme")           private var colorSchemeRaw: String = "system"
+    @AppStorage("ibru_language")              private var languageRaw: String = "system"
+    @AppStorage("ibru_hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var inviteEmail = ""
     @State private var isInviting = false
     @State private var inviteMessage: (text: String, isError: Bool)?
@@ -98,6 +99,14 @@ struct FamilySettingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+            }
+
+            Section("Help") {
+                Button {
+                    hasCompletedOnboarding = false
+                } label: {
+                    Label("Show App Tour", systemImage: "map")
+                }
             }
 
             Section {
