@@ -69,7 +69,6 @@ struct VaccineListView: View {
                 )
             }
         }
-        .navigationTitle("Vaccines")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { showingAdd = true } label: {

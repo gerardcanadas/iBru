@@ -15,8 +15,10 @@ struct RecordsView: View {
         NavigationStack {
             if let baby {
                 segmentContent(baby)
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        segmentPicker
+                    .toolbar {
+                        ToolbarItem(placement: .principal) {
+                            segmentPicker
+                        }
                     }
             } else {
                 ContentUnavailableView(
@@ -36,9 +38,7 @@ struct RecordsView: View {
             }
         }
         .pickerStyle(.segmented)
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(.bar)
+        .frame(maxWidth: 280)
     }
 
     @ViewBuilder

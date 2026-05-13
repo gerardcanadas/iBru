@@ -45,7 +45,6 @@ struct GrowthListView: View {
                 }
             }
         }
-        .navigationTitle("Growth")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { showingAdd = true } label: {

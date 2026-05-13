@@ -62,7 +62,6 @@ struct IllnessListView: View {
                 )
             }
         }
-        .navigationTitle("Illness")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { showingAdd = true } label: {
