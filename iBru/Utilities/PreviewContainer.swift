@@ -97,13 +97,13 @@ let previewContainer: ModelContainer = {
     let g3 = GrowthRecord(date: .now, weightKg: 6.8, heightCm: 65.5, headCircumferenceCm: 42.0)
     g3.baby = baby; ctx.insert(g3)
 
-    // Sample daily notes
+    // Sample daily notes (attached to bronchitis illness)
     let n1 = DailyNote(date: .now, content: "Ate well today, slept 4h in the afternoon.")
-    n1.baby = baby; ctx.insert(n1)
+    n1.illness = bronch; ctx.insert(n1)
     let n2 = DailyNote(date: Calendar.current.date(byAdding: .day, value: -1, to: .now)!, content: "Fussy in the morning, better after nap.")
-    n2.baby = baby; ctx.insert(n2)
+    n2.illness = bronch; ctx.insert(n2)
     let n3 = DailyNote(date: Calendar.current.date(byAdding: .day, value: -3, to: .now)!, content: "First time rolling over! Very excited.")
-    n3.baby = baby; ctx.insert(n3)
+    n3.illness = bronch; ctx.insert(n3)
 
     return container
 }()

@@ -19,15 +19,18 @@ struct DailyNoteTests {
         context = ModelContext(container)
     }
 
-    private func baby() -> Baby {
-        let b = Baby(name: "Test", birthDate: .now)
-        context.insert(b)
-        return b
+    private func illness() -> IllnessRecord {
+        let i = IllnessRecord(title: "Test Illness", startDate: .now)
+        let baby = Baby(name: "Test", birthDate: .now)
+        context.insert(baby)
+        i.baby = baby
+        context.insert(i)
+        return i
     }
 
     private func note(date: Date = .now, content: String = "Hello") -> DailyNote {
         let n = DailyNote(date: date, content: content)
-        n.baby = baby()
+        n.illness = illness()
         context.insert(n)
         return n
     }
@@ -60,16 +63,27 @@ struct DailyNoteTests {
         #expect(n.content == "Updated")
     }
 
-    // MARK: - Baby relationship
+    // MARK: - Illness relationship
 
-    @Test func baby_relationshipRoundTrips() throws {
-        let b = baby()
+    @Test func illness_relationshipRoundTrips() throws {
+        let i = illness()
         let n = DailyNote(date: .now, content: "Hello")
-        n.baby = b
+        n.illness = i
         context.insert(n)
         try context.save()
         let fetched = try context.fetch(FetchDescriptor<DailyNote>())
-        #expect(fetched.first?.baby?.name == "Test")
+        #expect(fetched.first?.illness?.title == "Test Illness")
+    }
+
+    @Test func illness_dailyNotes_containsNote() throws {
+        let i = illness()
+        let n = DailyNote(date: .now, content: "Hello")
+        n.illness = i
+        i.dailyNotes.append(n)
+        context.insert(n)
+        try context.save()
+        #expect(i.dailyNotes.count == 1)
+        #expect(i.dailyNotes.first?.content == "Hello")
     }
 
     // MARK: - Date mutability

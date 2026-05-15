@@ -30,9 +30,6 @@ final class Baby {
     @Relationship(deleteRule: .cascade, inverse: \GrowthRecord.baby)
     var growthRecords: [GrowthRecord] = []
 
-    @Relationship(deleteRule: .cascade, inverse: \DailyNote.baby)
-    var dailyNotes: [DailyNote] = []
-
     init(name: String, birthDate: Date, colorHex: String = "#5B8DEF") {
         self.name = name
         self.birthDate = birthDate

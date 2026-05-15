@@ -173,10 +173,10 @@ final class FirestoreService {
     }
 
     func save(_ note: DailyNote) async {
-        guard let ref = familyRef, let babyId = note.baby?.id else { return }
+        guard let ref = familyRef, let illnessId = note.illness?.id else { return }
         try? await ref.collection("notes").document(note.id).setData([
             "id": note.id,
-            "babyId": babyId,
+            "illnessId": illnessId,
             "date": Timestamp(date: note.date),
             "content": note.content,
             "updatedAt": Timestamp()
@@ -431,7 +431,7 @@ final class FirestoreService {
         for doc in notesSnap?.documents ?? [] {
             let d = doc.data()
             guard let id = d["id"] as? String,
-                  let babyId = d["babyId"] as? String,
+                  let illnessId = d["illnessId"] as? String,
                   let date = (d["date"] as? Timestamp)?.dateValue(),
                   let content = d["content"] as? String else { continue }
             seenNotes.insert(id)
@@ -440,7 +440,7 @@ final class FirestoreService {
             } else {
                 let note = DailyNote(date: date, content: content)
                 note.id = id
-                note.baby = babiesByID[babyId]
+                note.illness = illnessesByID[illnessId]
                 context.insert(note)
                 notesByID[id] = note
             }

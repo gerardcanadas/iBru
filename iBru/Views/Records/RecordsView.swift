@@ -5,7 +5,6 @@ enum RecordsSegment: String, CaseIterable {
     case illness = "Illness"
     case growth = "Growth"
     case vaccines = "Vaccines"
-    case notes = "Notes"
 }
 
 struct RecordsView: View {
@@ -39,7 +38,7 @@ struct RecordsView: View {
             }
         }
         .pickerStyle(.segmented)
-        .frame(maxWidth: 360)
+        .frame(maxWidth: 280)
     }
 
     @ViewBuilder
@@ -51,8 +50,6 @@ struct RecordsView: View {
             GrowthListView(baby: baby)
         case .vaccines:
             VaccineListView(baby: baby)
-        case .notes:
-            NoteListView(baby: baby)
         }
     }
 }

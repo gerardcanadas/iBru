@@ -7,6 +7,8 @@ struct IllnessDetailView: View {
     @State private var showingEdit = false
     @State private var showingAddTemperature = false
     @State private var editingTemperature: TemperatureReading?
+    @State private var showingAddNote = false
+    @State private var editingNote: DailyNote?
 
     private var durationText: String {
         guard let end = record.endDate else { return String(localized: "Ongoing") }
@@ -84,10 +86,33 @@ struct IllnessDetailView: View {
                 }
             }
 
-            if !record.notes.isEmpty {
-                Section("Notes") {
-                    Text(record.notes)
-                        .foregroundStyle(.secondary)
+            Section("Daily Log") {
+                ForEach(record.dailyNotes.sorted { $0.date > $1.date }) { note in
+                    Button { editingNote = note } label: {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(note.date.formatted(date: .abbreviated, time: .omitted))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                            Text(note.content)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(3)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            let id = note.id
+                            modelContext.delete(note)
+                            Task { await FirestoreService.shared.delete(noteId: id) }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
+                Button { showingAddNote = true } label: {
+                    Label("Add Entry", systemImage: "plus.circle")
                 }
             }
 
@@ -142,6 +167,12 @@ struct IllnessDetailView: View {
         }
         .sheet(item: $editingTemperature) { temp in
             TemperatureFormView(illness: record, temperature: temp)
+        }
+        .sheet(isPresented: $showingAddNote) {
+            NoteFormView(illness: record)
+        }
+        .sheet(item: $editingNote) { n in
+            NoteFormView(illness: record, note: n)
         }
     }
 }
