@@ -5,12 +5,11 @@ struct NoteListView: View {
     @Environment(\.modelContext) private var modelContext
     let baby: Baby
 
+    @Query(sort: \DailyNote.date, order: .reverse) private var allNotes: [DailyNote]
     @State private var editingNote: DailyNote?
 
     private var generalNotes: [DailyNote] {
-        baby.dailyNotes
-            .filter { $0.illness == nil }
-            .sorted { $0.date > $1.date }
+        allNotes.filter { $0.baby?.id == baby.id && $0.illness == nil }
     }
 
     var body: some View {
