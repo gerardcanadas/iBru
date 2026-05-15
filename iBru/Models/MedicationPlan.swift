@@ -76,6 +76,13 @@ final class MedicationPlan {
         return true
     }
 
+    /// True when the plan hasn't started yet (start date is strictly after today).
+    var isFuture: Bool {
+        guard stoppedDate == nil else { return false }
+        let today = Calendar.current.startOfDay(for: .now)
+        return Calendar.current.startOfDay(for: startDate) > today
+    }
+
     var isActive: Bool {
         if stoppedDate != nil { return false }
         let now = Date.now

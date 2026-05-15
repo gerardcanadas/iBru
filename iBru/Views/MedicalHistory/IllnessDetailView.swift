@@ -169,10 +169,10 @@ struct IllnessDetailView: View {
             TemperatureFormView(illness: record, temperature: temp)
         }
         .sheet(isPresented: $showingAddNote) {
-            NoteFormView(illness: record)
+            NoteFormView(baby: record.baby!, illness: record)
         }
         .sheet(item: $editingNote) { n in
-            NoteFormView(illness: record, note: n)
+            NoteFormView(baby: record.baby!, illness: record, note: n)
         }
     }
 }

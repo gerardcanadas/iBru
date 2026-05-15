@@ -173,14 +173,16 @@ final class FirestoreService {
     }
 
     func save(_ note: DailyNote) async {
-        guard let ref = familyRef, let illnessId = note.illness?.id else { return }
-        try? await ref.collection("notes").document(note.id).setData([
+        guard let ref = familyRef else { return }
+        var data: [String: Any] = [
             "id": note.id,
-            "illnessId": illnessId,
             "date": Timestamp(date: note.date),
             "content": note.content,
             "updatedAt": Timestamp()
-        ])
+        ]
+        if let illnessId = note.illness?.id { data["illnessId"] = illnessId }
+        if let babyId = note.baby?.id { data["babyId"] = babyId }
+        try? await ref.collection("notes").document(note.id).setData(data)
     }
 
     func delete(noteId: String) async {
@@ -431,16 +433,20 @@ final class FirestoreService {
         for doc in notesSnap?.documents ?? [] {
             let d = doc.data()
             guard let id = d["id"] as? String,
-                  let illnessId = d["illnessId"] as? String,
                   let date = (d["date"] as? Timestamp)?.dateValue(),
                   let content = d["content"] as? String else { continue }
             seenNotes.insert(id)
+            let illnessId = d["illnessId"] as? String
+            let babyId    = d["babyId"] as? String
             if let note = notesByID[id] {
                 note.date = date; note.content = content
+                if note.illness == nil, let illnessId { note.illness = illnessesByID[illnessId] }
+                if note.baby    == nil, let babyId    { note.baby    = babiesByID[babyId] }
             } else {
                 let note = DailyNote(date: date, content: content)
-                note.id = id
-                note.illness = illnessesByID[illnessId]
+                note.id      = id
+                note.illness = illnessId.flatMap { illnessesByID[$0] }
+                note.baby    = babyId.flatMap    { babiesByID[$0] }
                 context.insert(note)
                 notesByID[id] = note
             }

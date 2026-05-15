@@ -12,8 +12,11 @@ struct PlanListView: View {
     private var activePlans: [MedicationPlan] {
         baby.plans.filter { $0.isActive }.sorted { $0.medicationName < $1.medicationName }
     }
+    private var futurePlans: [MedicationPlan] {
+        baby.plans.filter { $0.isFuture }.sorted { $0.startDate < $1.startDate }
+    }
     private var pastPlans: [MedicationPlan] {
-        baby.plans.filter { !$0.isActive }.sorted { ($0.endDate ?? .distantFuture) > ($1.endDate ?? .distantFuture) }
+        baby.plans.filter { !$0.isActive && !$0.isFuture }.sorted { ($0.endDate ?? .distantFuture) > ($1.endDate ?? .distantFuture) }
     }
 
     var body: some View {
@@ -21,6 +24,22 @@ struct PlanListView: View {
             if !activePlans.isEmpty {
                 Section("Active") {
                     ForEach(activePlans) { plan in
+                        PlanRowView(plan: plan)
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) { planToDelete = plan } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                Button { editingPlan = plan } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.blue)
+                            }
+                    }
+                }
+            }
+            if !futurePlans.isEmpty {
+                Section("Upcoming") {
+                    ForEach(futurePlans) { plan in
                         PlanRowView(plan: plan)
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) { planToDelete = plan } label: {
@@ -46,7 +65,7 @@ struct PlanListView: View {
                     }
                 }
             }
-            if activePlans.isEmpty && pastPlans.isEmpty {
+            if activePlans.isEmpty && futurePlans.isEmpty && pastPlans.isEmpty {
                 ContentUnavailableView(
                     "No medications",
                     systemImage: "pill",
@@ -100,12 +119,12 @@ private struct PlanRowView: View {
                 Text(plan.medicationName)
                     .font(.headline)
                 Spacer()
-                Text(plan.isActive ? "Active" : "Ended")
+                Text(plan.isFuture ? "Upcoming" : plan.isActive ? "Active" : "Ended")
                     .font(.caption)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(plan.isActive ? Color.green.opacity(0.15) : Color.secondary.opacity(0.15))
-                    .foregroundStyle(plan.isActive ? .green : .secondary)
+                    .background(plan.isFuture ? Color.blue.opacity(0.15) : plan.isActive ? Color.green.opacity(0.15) : Color.secondary.opacity(0.15))
+                    .foregroundStyle(plan.isFuture ? .blue : plan.isActive ? .green : .secondary)
                     .clipShape(Capsule())
             }
             Text("\(plan.doseSummary) · \(plan.frequencySummary)")

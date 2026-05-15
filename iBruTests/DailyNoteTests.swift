@@ -29,8 +29,12 @@ struct DailyNoteTests {
     }
 
     private func note(date: Date = .now, content: String = "Hello") -> DailyNote {
+        let i = illness()
         let n = DailyNote(date: date, content: content)
-        n.illness = illness()
+        n.illness = i
+        n.baby = i.baby
+        i.baby?.dailyNotes.append(n)
+        i.dailyNotes.append(n)
         context.insert(n)
         return n
     }
@@ -84,6 +88,31 @@ struct DailyNoteTests {
         try context.save()
         #expect(i.dailyNotes.count == 1)
         #expect(i.dailyNotes.first?.content == "Hello")
+    }
+
+    // MARK: - Baby relationship
+
+    @Test func baby_relationshipRoundTrips() throws {
+        let baby = Baby(name: "Lena", birthDate: .now)
+        context.insert(baby)
+        let n = DailyNote(date: .now, content: "General observation")
+        n.baby = baby
+        baby.dailyNotes.append(n)
+        context.insert(n)
+        try context.save()
+        let fetched = try context.fetch(FetchDescriptor<DailyNote>())
+        #expect(fetched.first?.baby?.name == "Lena")
+    }
+
+    @Test func baby_generalNote_hasNoIllness() throws {
+        let baby = Baby(name: "Lena", birthDate: .now)
+        context.insert(baby)
+        let n = DailyNote(date: .now, content: "General note")
+        n.baby = baby
+        baby.dailyNotes.append(n)
+        context.insert(n)
+        try context.save()
+        #expect(n.illness == nil)
     }
 
     // MARK: - Date mutability

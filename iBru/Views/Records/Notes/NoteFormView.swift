@@ -5,7 +5,8 @@ struct NoteFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    let illness: IllnessRecord
+    let baby: Baby
+    var illness: IllnessRecord? = nil
     var note: DailyNote?
 
     @State private var date: Date = .now
@@ -53,7 +54,12 @@ struct NoteFormView: View {
         } else {
             let n = DailyNote(date: day, content: content)
             modelContext.insert(n)
-            illness.dailyNotes.append(n)
+            n.baby = baby
+            baby.dailyNotes.append(n)
+            if let illness {
+                n.illness = illness
+                illness.dailyNotes.append(n)
+            }
             Task { await FirestoreService.shared.save(n) }
         }
         dismiss()
@@ -63,6 +69,6 @@ struct NoteFormView: View {
 #Preview {
     let container = previewContainer
     let illness = try! container.mainContext.fetch(FetchDescriptor<IllnessRecord>()).first!
-    NoteFormView(illness: illness)
+    NoteFormView(baby: illness.baby!, illness: illness)
         .modelContainer(container)
 }
