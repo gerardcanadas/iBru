@@ -45,6 +45,7 @@ struct NotificationManagerTests {
         container = try ModelContainer(
             for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
             QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self, GrowthRecord.self,
+            DailyNote.self,
             configurations: config
         )
         context = ModelContext(container)
@@ -268,6 +269,70 @@ struct NotificationManagerTests {
         manager.scheduleNotifications(for: plan)
         manager.flushForTesting()
         #expect(mock.pendingCount == 0)
+    }
+
+    @Test func lastDoseDateInPast_schedulesNoNotifications() {
+        // endDate is still in the future, but the last dose slot already passed.
+        // isCurrentOrFuture = false → guard should cancel rather than schedule.
+        let plan = insertPlan(startDate: Calendar.current.date(byAdding: .day, value: -3, to: .now)!)
+        plan.endDate    = Calendar.current.date(byAdding: .day, value: 2, to: .now)!
+        plan.lastDoseDate = Calendar.current.date(byAdding: .hour, value: -1, to: .now)!
+        manager.scheduleNotifications(for: plan)
+        manager.flushForTesting()
+        #expect(mock.pendingCount == 0,
+                "Plan whose last dose has already passed should not produce new notifications")
+    }
+
+    @Test func lastDoseDateInPast_cancelsExistingNotifications() {
+        // Schedule while active, then mark as completed via lastDoseDate.
+        let plan = insertPlan()
+        manager.scheduleNotifications(for: plan)
+        manager.flushForTesting()
+        #expect(mock.pendingCount > 0, "Should have notifications while active")
+
+        plan.endDate      = Calendar.current.date(byAdding: .day, value: 1, to: .now)!
+        plan.lastDoseDate = Calendar.current.date(byAdding: .minute, value: -1, to: .now)!
+        manager.scheduleNotifications(for: plan)
+        manager.flushForTesting()
+        #expect(mock.pendingCount == 0,
+                "Re-scheduling a completed plan should cancel all its notifications")
+    }
+
+    // MARK: - syncAll
+
+    @Test func syncAll_cancelsInactivePlan_keepsActivePlan() {
+        let active   = insertPlan(name: "Active Med", frequency: .everyNHours, frequencyValue: 12)
+        let inactive = insertPlan(name: "Done Med",   frequency: .everyNHours, frequencyValue: 8)
+
+        // Both active: schedule both.
+        manager.scheduleNotifications(for: active)
+        manager.scheduleNotifications(for: inactive)
+        manager.flushForTesting()
+        let activeCountBefore = mock.pendingIDs.filter { $0.hasPrefix(active.id) }.count
+        #expect(activeCountBefore > 0)
+        #expect(mock.pendingIDs.filter { $0.hasPrefix(inactive.id) }.count > 0)
+
+        // Mark one as stopped.
+        inactive.stoppedDate = Date.now
+
+        manager.syncAll(plans: [active, inactive])
+        manager.flushForTesting()
+
+        let inactiveAfter = mock.pendingIDs.filter { $0.hasPrefix(inactive.id) }.count
+        let activeAfter   = mock.pendingIDs.filter { $0.hasPrefix(active.id) }.count
+        #expect(inactiveAfter == 0, "syncAll should cancel the stopped plan's notifications")
+        #expect(activeAfter == activeCountBefore,
+                "syncAll should not affect the active plan's notification count")
+    }
+
+    @Test func syncAll_schedulesActivePlansThatHadNone() {
+        // Simulate a plan that exists but was never scheduled (e.g. synced from Firestore).
+        let plan = insertPlan(name: "Newly Synced")
+        #expect(mock.pendingCount == 0)
+
+        manager.syncAll(plans: [plan])
+        manager.flushForTesting()
+        #expect(mock.pendingCount > 0, "syncAll should schedule notifications for an unscheduled active plan")
     }
 
     @Test func specificDays_onlySchedulesOnMatchingWeekdays() {

@@ -190,14 +190,30 @@ struct DoseSchedulerTests {
         #expect(times.last == lastDose)
     }
 
-    @Test func lastDoseDate_onDifferentDay_doesNotFilterSlots() {
-        // lastDoseDate yesterday → today's slots are unaffected
+    @Test func lastDoseDate_dayAfterLastDoseDay_returnsEmpty() {
+        // lastDoseDate was yesterday (March 1); any day AFTER that day should produce no slots.
+        // This prevents stale notifications firing after a course completes when endDate is
+        // in the future but the actual last dose slot has already passed.
         let yesterday = date(2025, 3, 1)
-        let today = date(2025, 3, 2)
-        let lastDose = date(2025, 3, 1, hour: 8)
-        let p = plan(frequency: .everyNHours, value: 8, start: yesterday, lastDoseDate: lastDose)
+        let today     = date(2025, 3, 2)
+        let lastDose  = date(2025, 3, 1, hour: 8)
+        let p = plan(frequency: .everyNHours, value: 8, start: yesterday,
+                     end: date(2025, 3, 4),          // endDate still in future
+                     lastDoseDate: lastDose)
         let times = DoseScheduler.scheduledTimes(for: p, on: today, calendar: utc)
-        #expect(times.count == 3)
+        #expect(times.isEmpty,
+                "Day after lastDoseDate should return no slots even when endDate is in the future")
+    }
+
+    @Test func lastDoseDate_dayBeforeLastDoseDay_isUnaffected() {
+        // lastDoseDate is March 3; computing slots for March 2 should be unaffected.
+        let march2    = date(2025, 3, 2)
+        let lastDose  = date(2025, 3, 3, hour: 8)
+        let p = plan(frequency: .everyNHours, value: 8, start: date(2025, 3, 1),
+                     end: date(2025, 3, 3),
+                     lastDoseDate: lastDose)
+        let times = DoseScheduler.scheduledTimes(for: p, on: march2, calendar: utc)
+        #expect(times.count == 3, "Days before lastDoseDate's day should produce the full slot set")
     }
 
     @Test func lastDoseDate_exactlyAtLastSlot_includesThatSlot() {

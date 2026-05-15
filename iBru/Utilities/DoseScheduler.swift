@@ -52,8 +52,15 @@ enum DoseScheduler {
             if let date = calendar.date(from: comps) { times = [date] }
         }
 
-        if let lastDose = plan.lastDoseDate, calendar.isDate(lastDose, inSameDayAs: day) {
-            times = times.filter { $0 <= lastDose.addingTimeInterval(60) }
+        if let lastDose = plan.lastDoseDate {
+            let lastDoseDay = calendar.startOfDay(for: lastDose)
+            let thisDay     = calendar.startOfDay(for: day)
+            if thisDay > lastDoseDay {
+                // Any day after lastDoseDate's calendar day gets no more slots.
+                return []
+            } else if thisDay == lastDoseDay {
+                times = times.filter { $0 <= lastDose.addingTimeInterval(60) }
+            }
         }
 
         return times

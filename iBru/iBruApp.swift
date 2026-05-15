@@ -47,6 +47,8 @@ struct RootView: View {
                 ContentView()
                     .task(id: family.familyId) {
                         await FirestoreService.shared.syncAll(context: modelContext)
+                        let plans = (try? modelContext.fetch(FetchDescriptor<MedicationPlan>())) ?? []
+                        NotificationManager.shared.syncAll(plans: plans)
                     }
             }
         }

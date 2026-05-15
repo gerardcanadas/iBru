@@ -53,6 +53,13 @@ final class NotificationManager {
     // MARK: - Schedule
 
     func scheduleNotifications(for plan: MedicationPlan) {
+        // If the plan has already ended or been stopped, cancel any lingering
+        // notifications rather than scheduling new ones.
+        guard plan.isCurrentOrFuture else {
+            cancelAllNotifications(for: plan)
+            return
+        }
+
         // IMPORTANT: use plan.id (stable UUID set at init time) as the prefix.
         // plan.persistentModelID is unstable for newly-inserted objects — it changes
         // between the temporary in-memory ID and the permanent store ID after the first
@@ -92,6 +99,12 @@ final class NotificationManager {
                     .map(\.identifier)
                 center.removePendingNotificationRequests(withIdentifiers: oldIDs)
 
+                // Use a DispatchGroup so the semaphore is only signalled after every
+                // add() is acknowledged by the notification center. Without this,
+                // a second scheduleNotifications() call on the serial queue can read
+                // a stale pending list (missing the first call's additions) and fail
+                // to remove them — producing duplicate or stale notifications.
+                let group = DispatchGroup()
                 for slot in slots {
                     let content = UNMutableNotificationContent()
                     content.title = medicationName
@@ -109,11 +122,28 @@ final class NotificationManager {
                     let request = UNNotificationRequest(
                         identifier: slot.id, content: content, trigger: trigger
                     )
-                    center.add(request, withCompletionHandler: nil)
+                    group.enter()
+                    center.add(request) { _ in group.leave() }
                 }
-                semaphore.signal()
+                group.notify(queue: .global(qos: .background)) {
+                    semaphore.signal()
+                }
             }
             semaphore.wait()
+        }
+    }
+
+    /// Reschedule notifications for all active plans and cancel notifications for
+    /// inactive ones. Call on app launch (after data sync) so the OS queue always
+    /// reflects the current plan state — even for plans that expired since the last
+    /// foreground session.
+    func syncAll(plans: [MedicationPlan]) {
+        for plan in plans {
+            if plan.isCurrentOrFuture {
+                scheduleNotifications(for: plan)
+            } else {
+                cancelAllNotifications(for: plan)
+            }
         }
     }
 
