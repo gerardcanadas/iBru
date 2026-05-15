@@ -7,10 +7,29 @@ struct iBruApp: App {
 
     private let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
+    private static let schema = Schema([
+        Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
+        QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self,
+        GrowthRecord.self, DailyNote.self
+    ])
+
     private let container: ModelContainer = {
-        let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self, GrowthRecord.self, DailyNote.self])
-        let config = ModelConfiguration(schema: schema)
-        return try! ModelContainer(for: schema, configurations: config)
+        let config = ModelConfiguration(schema: iBruApp.schema)
+        if let container = try? ModelContainer(for: iBruApp.schema, configurations: config) {
+            return container
+        }
+        // Lightweight migration failed (schema changed incompatibly).
+        // Wipe the local store — Firestore sync will restore all data on next launch.
+        let fm = FileManager.default
+        if let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+           let files = try? fm.contentsOfDirectory(at: appSupport, includingPropertiesForKeys: nil) {
+            for file in files where file.pathExtension == "sqlite"
+                                 || file.lastPathComponent.hasSuffix(".sqlite-wal")
+                                 || file.lastPathComponent.hasSuffix(".sqlite-shm") {
+                try? fm.removeItem(at: file)
+            }
+        }
+        return try! ModelContainer(for: iBruApp.schema, configurations: config)
     }()
 
     var body: some Scene {
