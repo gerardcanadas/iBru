@@ -192,6 +192,22 @@
         }
       }
     },
+    "Add Entry" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afegir entrada"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir entrada"
+          }
+        }
+      }
+    },
     "Add a baby profile in the Profiles tab" : {
       "localizations" : {
         "ca" : {
@@ -721,18 +737,18 @@
         }
       }
     },
-    "Daily Notes" : {
+    "Daily Log" : {
       "localizations" : {
         "ca" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Notes diàries"
+            "value" : "Registre diari"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Notas diarias"
+            "value" : "Registro diario"
           }
         }
       }
@@ -4072,6 +4088,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lleva el control de enfermedades, vacunas, medidas de crecimiento y temperaturas, todo en un lugar."
+          }
+        }
+      }
+    },
+    "Track an illness day by day — open any illness episode to add dated entries and follow how symptoms evolve over time." : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segueix una malaltia dia a dia — obre qualsevol episodi i afegeix entrades amb data per veure com evolucionen els símptomes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sigue una enfermedad día a día — abre cualquier episodio y añade entradas con fecha para ver cómo evolucionan los síntomas."
           }
         }
       }
