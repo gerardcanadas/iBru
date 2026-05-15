@@ -52,8 +52,8 @@ struct NoteFormView: View {
             Task { await FirestoreService.shared.save(n) }
         } else {
             let n = DailyNote(date: day, content: content)
-            n.baby = baby
             modelContext.insert(n)
+            baby.dailyNotes.append(n)
             Task { await FirestoreService.shared.save(n) }
         }
         dismiss()

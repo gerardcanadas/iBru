@@ -43,7 +43,6 @@ struct NoteListView: View {
                 }
             }
         }
-        .navigationTitle("Notes")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
