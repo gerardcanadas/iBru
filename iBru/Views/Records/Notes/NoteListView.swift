@@ -5,7 +5,6 @@ struct NoteListView: View {
     @Environment(\.modelContext) private var modelContext
     let baby: Baby
 
-    @State private var showingAddNote = false
     @State private var editingNote: DailyNote?
 
     private var generalNotes: [DailyNote] {
@@ -48,16 +47,6 @@ struct NoteListView: View {
             }
         }
         .navigationTitle("Notes")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button { showingAddNote = true } label: {
-                    Image(systemName: "plus")
-                }
-            }
-        }
-        .sheet(isPresented: $showingAddNote) {
-            NoteFormView(baby: baby)
-        }
         .sheet(item: $editingNote) { note in
             NoteFormView(baby: baby, note: note)
         }
