@@ -21,11 +21,17 @@ The target is a host-based unit test bundle: `BUNDLE_LOADER` and `TEST_HOST` poi
 
 ```
 iBruTests/
-  DoseSchedulerTests.swift      — pure-logic scheduling tests
+  DailyNoteTests.swift          — DailyNote model (date normalisation, content, relationship)
+  DoseSchedulerTests.swift      — pure-logic scheduling tests (lastDoseDate filter, nextSlot skip exclusion)
   FamilyServiceTests.swift      — FamilyService pure-state tests (no Firestore)
+  GrowthRecordTests.swift       — GrowthRecord model tests
   InsightsEngineTests.swift     — InsightsEngine + calendar helper tests
-  MedicationPlanTests.swift     — computed property tests (doseSummary, isActive, etc.) + IllnessRecordTests
+  MedicationPlanTests.swift     — computed property tests (doseSummary, isActive, overlapsSchedule, etc.) + IllnessRecordTests
+  NotificationManagerTests.swift — notification scheduling logic
   QuickDoseRecordTests.swift    — QuickDoseRecord model + interval warning logic
+  TemperatureReadingTests.swift — TemperatureReading model tests
+  VaccineRecordTests.swift      — VaccineRecord model tests
+  WHOGrowthDataTests.swift      — WHO percentile table integrity tests
 ```
 
 Add new test files following the `<Feature>Tests.swift` naming convention.
@@ -53,13 +59,17 @@ struct MyFeatureTests {
     init() throws {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         container = try ModelContainer(
-            for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self,
+            for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
+            QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self,
+            GrowthRecord.self, DailyNote.self,
             configurations: config
         )
         context = ModelContext(container)
     }
 }
 ```
+
+Always include the full current schema — SwiftData will throw at test startup if a model in the relationship graph is missing from the container.
 
 Swift Testing calls `init()` before each `@Test`, so every test gets an isolated in-memory store. Mark the suite `@MainActor` — SwiftData context operations require the main actor.
 
@@ -79,10 +89,11 @@ Naming convention: `<subject>_<condition>_<expectedOutcome>`.
 ## What to test
 
 Good candidates:
-- `DoseScheduler.scheduledTimes(for:on:calendar:)` — pure logic, easy to isolate
-- Model computed properties: `isActive`, `isOngoing`, `frequencySummary`, `doseSummary`, `durationSummary`
+- `DoseScheduler.scheduledTimes(for:on:calendar:)` — pure logic, easy to isolate; also `nextSlot` (use `Calendar.current`-relative dates, not UTC, since `nextSlot` uses `Calendar.current` internally)
+- Model computed properties: `isActive`, `isOngoing`, `isCurrentOrFuture`, `effectiveScheduleEnd`, `overlapsSchedule`, `frequencySummary`, `doseSummary`, `durationSummary`
 - `InsightsEngine` static methods: `dateRange`, `medicationInsights`, `illnessInsights`, `illnessDayIDs`, `illnessStartDayIDs`, `dayID`
 - `FamilyService` pure state methods: `store`, `clearFamily`, `hasFamily`, `FamilyError`
+- `WHOGrowthData` table integrity: row count, p3 < p50 < p97, interpolation bounds
 
 Avoid testing:
 - Views (no UIKit/SwiftUI test infrastructure is set up)

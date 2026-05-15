@@ -6,10 +6,14 @@ Add sample data for a new model to the preview container.
 
 ## Current test data
 
-- Baby "Pau" (birthDate 90 days ago, colorHex "#FF6B6B")
-- MedicationPlan "Paracetamol" — 5ml, every 8h, started yesterday
-- MedicationPlan "Vitamin D" — 400 drops, 1x/day, 7-day span starting today
-- One `DoseRecord` (taken) for Paracetamol at the first slot today
+- Baby "Pau" (male, birthDate 90 days ago, colorHex "#5B8DEF")
+- MedicationPlan "Paracetamol" — 5ml, every 8h, started ~10h ago; one DoseRecord (taken) at first slot today
+- MedicationPlan "Vitamin D" — 0.5ml, 1x/day, 7-day span starting 3 days ago
+- QuickDoseRecord "Paracetamol" — 5ml, 3h ago
+- IllnessRecord "Cold" — resolved 20–18 days ago; "Bronchitis" — ongoing from 10 days ago (with 2 TemperatureReadings); "Fever" — resolved 60–55 days ago
+- VaccineRecord "MMR" — pending; "DTaP-1" — given 30 days ago
+- GrowthRecord × 3 — at 60, 30, and 0 days ago (weight + height + head circumference)
+- DailyNote × 3 — today, yesterday, and 3 days ago
 
 ## How to add data for a new model
 
@@ -38,4 +42,5 @@ modelContext.insert(pastIllness)
 
 Run a `#Preview` in Xcode to visually confirm the new data appears correctly in both list sections.
 
-If the new model was added to the schema in `iBruApp.swift`, ensure `PreviewContainer.swift` also includes it in its `Schema([...])` array.
+If the new model was added to the schema in `iBruApp.swift`, ensure `PreviewContainer.swift` also includes it in its `ModelContainer(for:)` call. The full current list is:
+`Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self, GrowthRecord.self, DailyNote.self`

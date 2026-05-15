@@ -28,11 +28,15 @@ Every new model, computed property, utility method, or business-logic change **m
 ### Data layer
 
 **SwiftData** is the local store. Models live in `iBru/Models/`:
-- `Baby` — root entity; owns `plans`, `illnesses`, and `quickDoses` (all cascade)
-- `MedicationPlan` — belongs to one `Baby`; owns `records` (cascade); many-to-many `illnesses`
+- `Baby` — root entity; owns `plans`, `illnesses`, `quickDoses`, `vaccines`, `growthRecords`, `dailyNotes` (all cascade)
+- `MedicationPlan` — belongs to one `Baby`; owns `records` (cascade); many-to-many `illnesses`; key fields: `lastDoseDate` (exact end-slot timestamp), `effectiveScheduleEnd`, `overlapsSchedule(newStart:newEnd:)`
 - `DoseRecord` — belongs to one `MedicationPlan`; records a single dose event
-- `IllnessRecord` — belongs to one `Baby`; soft-links to `plans` (nullify on delete)
+- `IllnessRecord` — belongs to one `Baby`; soft-links to `plans` (nullify on delete); owns `temperatures` (cascade)
 - `QuickDoseRecord` — belongs to one `Baby`; records a one-off dose not tied to any plan
+- `TemperatureReading` — belongs to one `IllnessRecord`
+- `VaccineRecord` — belongs to one `Baby`
+- `GrowthRecord` — belongs to one `Baby`; optional weight/height/head fields
+- `DailyNote` — belongs to one `Baby`; `date` normalized to start-of-day in `init`
 
 Every model has `var id: String = UUID().uuidString` as its first property — this is the Firestore document key used for cross-device sync.
 
@@ -43,6 +47,10 @@ families/{familyId}/plans/{id}
 families/{familyId}/records/{id}
 families/{familyId}/illnesses/{id}
 families/{familyId}/quickDoses/{id}
+families/{familyId}/temperatures/{id}
+families/{familyId}/vaccines/{id}
+families/{familyId}/growth/{id}
+families/{familyId}/notes/{id}
 ```
 
 ### Services
@@ -75,7 +83,9 @@ Task { await FirestoreService.shared.delete(recordId: id) }
 
 ### Scheduling logic
 
-`DoseScheduler` (`Utilities/DoseScheduler.swift`) is a pure-logic `enum` — no SwiftData, no UI. It computes scheduled times for a plan on a given day, supporting four `FrequencyUnit` cases: `everyNHours`, `timesPerDay`, `specificDays`, `everyNDays`.
+`DoseScheduler` (`Utilities/DoseScheduler.swift`) is a pure-logic `enum` — no SwiftData, no UI. It computes scheduled times for a plan on a given day, supporting four `FrequencyUnit` cases: `everyNHours`, `timesPerDay`, `specificDays`, `everyNDays`. Key behaviours:
+- `scheduledTimes(for:on:calendar:)` trims slots after `plan.lastDoseDate + 60s` on the final day
+- `nextSlot(for:after:)` uses `Calendar.current` internally and excludes slots that have a `.skipped` `DoseRecord`; when testing `nextSlot`, use `Calendar.current`-relative dates (not fixed UTC dates) to avoid timezone mismatches
 
 ### Xcode project
 
@@ -83,7 +93,9 @@ The project uses `PBXFileSystemSynchronizedRootGroup` — new files placed insid
 
 New models must be registered in the schema array in `iBruApp.swift`:
 ```swift
-let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, NewModel.self])
+let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
+                     QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self,
+                     GrowthRecord.self, DailyNote.self, NewModel.self])
 ```
 
 ### Previews
@@ -134,7 +146,7 @@ Never hardcode Spanish or Catalan text in Swift source — all translations belo
 | # | Tab | Icon | Purpose |
 |---|-----|------|---------|
 | 1 | **Home** | `house.fill` | Daily medication overview + quick dose logging. Medication card tap → dose timeline for that plan. |
-| 2 | **Records** | `stethoscope` | Health records hub with segment picker: **Illness \| Growth \| Vaccines**. Replaces the old Medical History tab. |
+| 2 | **Records** | `stethoscope` | Health records hub with segment picker: **Illness \| Growth \| Vaccines \| Notes**. Replaces the old Medical History tab. |
 | 3 | **Insights** | `chart.xyaxis.line` | Analytics for all health data types. |
 | 4 | **Profiles** | `person.2.fill` | Baby profiles + Family Settings. |
 
@@ -145,7 +157,7 @@ The **Today** tab was merged into Home — tapping a medication card on the Dash
 | Feature type | Where it lives |
 |---|---|
 | Daily action (log dose, log quick dose) | Home tab (Dashboard area) |
-| Health record (illness, growth measurement, vaccine, temperature) | Records tab — new segment in `RecordsView` |
+| Health record (illness, growth measurement, vaccine, temperature, daily note) | Records tab — new segment in `RecordsView` |
 | Analytics / charting | Insights tab |
 | Baby biography or account/family settings | Profiles tab |
 
@@ -164,6 +176,7 @@ Use `/new-health-record` for the full scaffolding checklist.
 - Computed properties (`isActive`, `isOngoing`, `frequencySummary`, `doseSummary`) live on the model — views must not format inline.
 - `@Relationship(deleteRule: .cascade, inverse: ...)` for owned children; `@Relationship(inverse: ...)` for soft links.
 - `isOngoing` uses strict day comparison: same-day end means "ended today", not "still ongoing".
+- All model computed properties that return user-visible `String` must use `String(localized:)` — plain literals in `String`-returning properties are NOT localized even when displayed in `Text()`.
 
 ## Claude Code skills
 

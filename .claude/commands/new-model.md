@@ -15,10 +15,12 @@ Scaffold a new SwiftData @Model class for this project.
 
 After creating the model, add it to the schema array in `iBruApp.swift`:
 ```swift
-let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, NewModel.self])
+let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
+                     QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self,
+                     GrowthRecord.self, DailyNote.self, NewModel.self])
 ```
 
-Also add sample data for it in `Utilities/PreviewContainer.swift` so #Preview blocks work.
+Also update `Utilities/PreviewContainer.swift` — both the `ModelContainer(for:)` call and the sample data — so `#Preview` blocks work.
 
 ## Firestore sync
 

@@ -19,13 +19,17 @@ Follow `/new-model` conventions:
 
 Add the new model to the schema array in `iBruApp.swift`:
 ```swift
-let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self, FeatureRecord.self])
+let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
+                     QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self,
+                     GrowthRecord.self, DailyNote.self, FeatureRecord.self])
 ```
 
 Also add it to the in-memory container in every test file that exercises it:
 ```swift
 container = try ModelContainer(
-    for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self, FeatureRecord.self,
+    for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
+    QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self,
+    GrowthRecord.self, DailyNote.self, FeatureRecord.self,
     configurations: config
 )
 ```
@@ -59,12 +63,13 @@ Follow the standard feature pattern from `/new-feature`:
 
 In `iBru/Views/Records/RecordsView.swift`:
 
-1. Add a case to the `RecordsSegment` enum:
+1. Add a case to the `RecordsSegment` enum (currently has illness, growth, vaccines, notes):
 ```swift
 enum RecordsSegment: String, CaseIterable {
     case illness = "Illness"
     case growth = "Growth"
     case vaccines = "Vaccines"
+    case notes = "Notes"
     case feature = "Feature"   // ← new
 }
 ```
@@ -75,7 +80,9 @@ case .feature:
     FeatureListView(baby: baby)
 ```
 
-3. Add the tab label string to `Localizable.xcstrings` (es + ca translations).
+3. The segment picker width is currently 360pt. If adding a fifth tab makes it too crowded, increase it or consider a navigation-based approach instead.
+
+4. Add the tab label string to `Localizable.xcstrings` (es + ca translations).
 
 ### 6. Add preview data
 
@@ -92,40 +99,26 @@ Create `iBruTests/<Feature>RecordTests.swift`. Test:
 - Any engine/utility logic extracted from views
 - Never assert exact localized strings — use locale-independent invariants (see `/add-tests`)
 
-## Example RecordsView skeleton
+## Current RecordsView state
+
+`RecordsView` already has four segments: Illness, Growth, Vaccines, Notes. The picker is 360pt wide and lives in `.toolbar { ToolbarItem(placement: .principal) }`. The pattern to follow:
 
 ```swift
 enum RecordsSegment: String, CaseIterable {
     case illness = "Illness"
     case growth = "Growth"
     case vaccines = "Vaccines"
+    case notes = "Notes"
+    // add new case here
 }
 
-struct RecordsView: View {
-    var baby: Baby
-    @State private var segment: RecordsSegment = .illness
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Picker("", selection: $segment) {
-                ForEach(RecordsSegment.allCases, id: \.self) { s in
-                    Text(s.rawValue).tag(s)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding()
-
-            switch segment {
-            case .illness:
-                IllnessListView(baby: baby)
-            case .growth:
-                GrowthListView(baby: baby)
-            case .vaccines:
-                VaccineListView(baby: baby)
-            }
-        }
-        .navigationTitle("Records")
-    }
+// In segmentContent(_:):
+switch segment {
+case .illness:  IllnessListView(baby: baby)
+case .growth:   GrowthListView(baby: baby)
+case .vaccines: VaccineListView(baby: baby)
+case .notes:    NoteListView(baby: baby)
+// add new case here
 }
 ```
 
