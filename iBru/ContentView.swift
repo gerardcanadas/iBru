@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Query(sort: \Baby.name) private var babies: [Baby]
+    @Query(filter: #Predicate<Baby> { $0.isActive == true }, sort: \Baby.name) private var babies: [Baby]
     @State private var selectedBaby: Baby?
     @State private var selectedTab: Int = 0
     @AppStorage("ibru_hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false

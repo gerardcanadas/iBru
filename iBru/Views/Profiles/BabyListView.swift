@@ -2,17 +2,19 @@ import SwiftUI
 import SwiftData
 
 struct BabyListView: View {
-    @Query(sort: \Baby.name) private var babies: [Baby]
+    @Query(filter: #Predicate<Baby> { $0.isActive == true }, sort: \Baby.name) private var babies: [Baby]
+    @Query(filter: #Predicate<Baby> { $0.isActive == false }, sort: \Baby.name) private var archivedBabies: [Baby]
     @Environment(\.modelContext) private var modelContext
     @Binding var selectedBaby: Baby?
 
     @State private var showingAddBaby = false
     @State private var editingBaby: Baby?
+    @State private var babyToArchive: Baby?
 
     var body: some View {
         NavigationStack {
             Group {
-                if babies.isEmpty {
+                if babies.isEmpty && archivedBabies.isEmpty {
                     ContentUnavailableView(
                         "No profiles yet",
                         systemImage: "person.crop.circle.badge.plus",
@@ -20,21 +22,40 @@ struct BabyListView: View {
                     )
                 } else {
                     List {
-                        ForEach(babies) { baby in
-                            BabyRowView(
-                                baby: baby,
-                                isSelected: selectedBaby?.persistentModelID == baby.persistentModelID
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture { selectedBaby = baby }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) { delete(baby) } label: {
-                                    Label("Delete", systemImage: "trash")
+                        if !babies.isEmpty {
+                            Section {
+                                ForEach(babies) { baby in
+                                    BabyRowView(
+                                        baby: baby,
+                                        isSelected: selectedBaby?.persistentModelID == baby.persistentModelID
+                                    )
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { selectedBaby = baby }
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) { babyToArchive = baby } label: {
+                                            Label("Archive", systemImage: "archivebox")
+                                        }
+                                        Button { editingBaby = baby } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                        }
+                                        .tint(.blue)
+                                    }
                                 }
-                                Button { editingBaby = baby } label: {
-                                    Label("Edit", systemImage: "pencil")
+                            }
+                        }
+
+                        if !archivedBabies.isEmpty {
+                            Section("Archived") {
+                                ForEach(archivedBabies) { baby in
+                                    HStack {
+                                        BabyRowView(baby: baby, isSelected: false)
+                                        Spacer()
+                                        Button("Restore") { restore(baby) }
+                                            .buttonStyle(.bordered)
+                                            .tint(.green)
+                                            .font(.subheadline)
+                                    }
                                 }
-                                .tint(.blue)
                             }
                         }
                     }
@@ -59,17 +80,34 @@ struct BabyListView: View {
             .sheet(item: $editingBaby) { baby in
                 BabyFormView(baby: baby)
             }
+            .confirmationDialog(
+                "Archive profile?",
+                isPresented: Binding(get: { babyToArchive != nil }, set: { if !$0 { babyToArchive = nil } }),
+                titleVisibility: .visible
+            ) {
+                Button("Archive", role: .destructive) {
+                    if let b = babyToArchive { archive(b) }
+                    babyToArchive = nil
+                }
+                Button("Cancel", role: .cancel) { babyToArchive = nil }
+            } message: {
+                Text("You can restore this profile later from the Archived section.")
+            }
         }
     }
 
-    private func delete(_ baby: Baby) {
-        let id = baby.id
+    private func archive(_ baby: Baby) {
         NotificationManager.shared.cancelAllNotifications(for: baby)
         if selectedBaby?.persistentModelID == baby.persistentModelID {
             selectedBaby = nil
         }
-        modelContext.delete(baby)
-        Task { await FirestoreService.shared.delete(babyId: id) }
+        baby.isActive = false
+        Task { await FirestoreService.shared.save(baby) }
+    }
+
+    private func restore(_ baby: Baby) {
+        baby.isActive = true
+        Task { await FirestoreService.shared.save(baby) }
     }
 }
 

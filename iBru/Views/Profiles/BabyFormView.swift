@@ -21,6 +21,7 @@ struct BabyFormView: View {
     @State private var name: String = ""
     @State private var birthDate: Date = Calendar.current.date(byAdding: .month, value: -3, to: .now) ?? .now
     @State private var colorHex: String = "#5B8DEF"
+    @State private var sex: BabySex = .male
 
     var isEditing: Bool { baby != nil }
 
@@ -30,6 +31,12 @@ struct BabyFormView: View {
                 Section("Baby info") {
                     TextField("Name", text: $name)
                     DatePicker("Birth date", selection: $birthDate, in: ...Date.now, displayedComponents: .date)
+                    Picker("Sex", selection: $sex) {
+                        ForEach(BabySex.allCases, id: \.self) { s in
+                            Text(s.label).tag(s)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 }
 
                 Section("Color") {
@@ -64,6 +71,7 @@ struct BabyFormView: View {
                     name = b.name
                     birthDate = b.birthDate
                     colorHex = b.colorHex
+                    sex = b.sex
                 }
             }
         }
@@ -75,9 +83,11 @@ struct BabyFormView: View {
             b.name = trimmed
             b.birthDate = birthDate
             b.colorHex = colorHex
+            b.sex = sex
             Task { await FirestoreService.shared.save(b) }
         } else {
             let b = Baby(name: trimmed, birthDate: birthDate, colorHex: colorHex)
+            b.sex = sex
             modelContext.insert(b)
             Task { await FirestoreService.shared.save(b) }
         }
