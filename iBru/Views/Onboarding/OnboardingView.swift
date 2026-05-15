@@ -34,11 +34,7 @@ struct OnboardingView: View {
              isInteractive: false),
         Page(symbol: "stethoscope",
              title: "Health Records",
-             body: "Track illnesses, vaccines, growth measurements, and temperatures — all in one place.",
-             isInteractive: false),
-        Page(symbol: "note.text",
-             title: "Daily Log",
-             body: "Track an illness day by day — open any illness episode to add dated entries and follow how symptoms evolve over time.",
+             body: "Track illnesses, vaccines, growth, and temperatures. Open any illness to add daily log entries and follow how symptoms evolve over time.",
              isInteractive: false),
         Page(symbol: "chart.xyaxis.line",
              title: "Understand the Patterns",
@@ -65,7 +61,6 @@ struct OnboardingView: View {
                     pageContent(pages[3]).tag(3)
                     pageContent(pages[4]).tag(4)
                     pageContent(pages[5]).tag(5)
-                    pageContent(pages[6]).tag(6)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.easeInOut, value: currentPage)

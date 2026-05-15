@@ -2664,38 +2664,6 @@
         }
       }
     },
-    "No Notes" : {
-      "localizations" : {
-        "ca" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sense notes"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sin notas"
-          }
-        }
-      }
-    },
-    "General observations will appear here" : {
-      "localizations" : {
-        "ca" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les observacions generals apareixeran aquí"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las observaciones generales aparecerán aquí"
-          }
-        }
-      }
-    },
     "No medications" : {
       "localizations" : {
         "ca" : {
@@ -4062,18 +4030,18 @@
         }
       }
     },
-    "Track an illness day by day — open any illness episode to add dated entries and follow how symptoms evolve over time." : {
+    "Track illnesses, vaccines, growth, and temperatures. Open any illness to add daily log entries and follow how symptoms evolve over time." : {
       "localizations" : {
         "ca" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Segueix una malaltia dia a dia — obre qualsevol episodi i afegeix entrades amb data per veure com evolucionen els símptomes."
+            "value" : "Registra malalties, vacunes, creixement i temperatures. Obre qualsevol malaltia per afegir entrades al diari i seguir l'evolució dels símptomes."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sigue una enfermedad día a día — abre cualquier episodio y añade entradas con fecha para ver cómo evolucionan los síntomas."
+            "value" : "Registra enfermedades, vacunas, crecimiento y temperaturas. Abre cualquier enfermedad para añadir entradas al diario y seguir la evolución de los síntomas."
           }
         }
       }
