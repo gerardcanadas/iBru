@@ -23,6 +23,7 @@ struct PlanFormView: View {
     @State private var startDate: Date = .now
     @State private var hasEndDate: Bool = false
     @State private var endDate: Date = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
+    @State private var lastDoseSlot: Date? = nil
     @State private var notes: String = ""
 
     private var isEditing: Bool { plan != nil }
@@ -104,6 +105,22 @@ struct PlanFormView: View {
                     Toggle("Set end date", isOn: $hasEndDate)
                     if hasEndDate {
                         DatePicker("End date", selection: $endDate, in: startDate..., displayedComponents: .date)
+                            .onChange(of: endDate) { _, _ in lastDoseSlot = nil }
+                        let slots = slotsForEndDate(endDate)
+                        if slots.isEmpty {
+                            Text("No doses scheduled on this day")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Picker("Last dose", selection: Binding(
+                                get: { lastDoseSlot ?? slots.last! },
+                                set: { lastDoseSlot = $0 }
+                            )) {
+                                ForEach(slots, id: \.self) { slot in
+                                    Text(slot, style: .time).tag(slot)
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -129,10 +146,10 @@ struct PlanFormView: View {
                     isNewMedicine = true
                 }
             }
-            .alert("Already Scheduled", isPresented: $showDuplicateAlert) {
+            .alert("Schedule Conflict", isPresented: $showDuplicateAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text("\(medicationName.trimmingCharacters(in: .whitespaces)) already has an active schedule. End the current schedule before adding a new one.")
+                Text("The new schedule for \(medicationName.trimmingCharacters(in: .whitespaces)) overlaps with an existing one. Adjust the start or end dates so the schedules don't conflict.")
             }
             .sheet(isPresented: $showMedicinePicker) {
                 MedicinePickerView(plans: baby.plans) { selected in
@@ -145,6 +162,31 @@ struct PlanFormView: View {
                 }
             }
         }
+    }
+
+    private func hasScheduleConflict(name: String, newStart: Date, newLastDose: Date?) -> Bool {
+        let newEnd: Date
+        if let lastDose = newLastDose {
+            newEnd = lastDose
+        } else if hasEndDate {
+            newEnd = endDate.addingTimeInterval(86400)
+        } else {
+            newEnd = .distantFuture
+        }
+        return baby.plans.contains { existing in
+            guard existing.medicationName.localizedCaseInsensitiveCompare(name) == .orderedSame else { return false }
+            return existing.overlapsSchedule(newStart: newStart, newEnd: newEnd)
+        }
+    }
+
+    private func slotsForEndDate(_ date: Date) -> [Date] {
+        let tempPlan = MedicationPlan(
+            medicationName: "", doseAmount: 0, doseUnit: "",
+            frequencyUnit: frequencyUnit, frequencyValue: frequencyValue,
+            startDate: startDate
+        )
+        tempPlan.weekdays = Array(selectedWeekdays)
+        return DoseScheduler.scheduledTimes(for: tempPlan, on: date)
     }
 
     private var isValid: Bool {
@@ -192,22 +234,19 @@ struct PlanFormView: View {
         if let end = p.endDate {
             hasEndDate = true
             endDate = end
+            lastDoseSlot = p.lastDoseDate
         }
         notes = p.notes
     }
 
     private func save() {
         let trimmedName = medicationName.trimmingCharacters(in: .whitespaces)
-        if plan == nil {
-            let isDuplicate = baby.plans.contains {
-                $0.medicationName.localizedCaseInsensitiveCompare(trimmedName) == .orderedSame && $0.isActive
-            }
-            if isDuplicate {
-                showDuplicateAlert = true
-                return
-            }
-        }
         let amount = Double(doseAmount) ?? 0
+        let effectiveLastDose = hasEndDate ? (lastDoseSlot ?? slotsForEndDate(endDate).last) : nil
+        if plan == nil, hasScheduleConflict(name: trimmedName, newStart: startDate, newLastDose: effectiveLastDose) {
+            showDuplicateAlert = true
+            return
+        }
         if let p = plan {
             p.medicationName = trimmedName
             p.doseAmount = amount
@@ -217,6 +256,7 @@ struct PlanFormView: View {
             p.weekdays = Array(selectedWeekdays)
             p.startDate = startDate
             p.endDate = hasEndDate ? endDate : nil
+            p.lastDoseDate = effectiveLastDose
             p.notes = notes
             NotificationManager.shared.scheduleNotifications(for: p)
             Task { await FirestoreService.shared.save(p) }
@@ -232,6 +272,7 @@ struct PlanFormView: View {
                 notes: notes
             )
             p.weekdays = Array(selectedWeekdays)
+            p.lastDoseDate = effectiveLastDose
             p.baby = baby
             modelContext.insert(p)
             NotificationManager.shared.scheduleNotifications(for: p)

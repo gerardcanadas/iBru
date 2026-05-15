@@ -20,6 +20,8 @@ final class FirestoreService {
             "name": baby.name,
             "birthDate": Timestamp(date: baby.birthDate),
             "colorHex": baby.colorHex,
+            "sex": baby.sex.rawValue,
+            "isActive": baby.isActive,
             "updatedAt": Timestamp()
         ])
     }
@@ -40,6 +42,7 @@ final class FirestoreService {
             "updatedAt": Timestamp()
         ]
         if let end = plan.endDate { data["endDate"] = Timestamp(date: end) }
+        if let lastDose = plan.lastDoseDate { data["lastDoseDate"] = Timestamp(date: lastDose) }
         if let stopped = plan.stoppedDate { data["stoppedDate"] = Timestamp(date: stopped) }
         try? await ref.collection("plans").document(plan.id).setData(data)
     }
@@ -169,6 +172,22 @@ final class FirestoreService {
         try? await ref.collection("growth").document(growthId).delete()
     }
 
+    func save(_ note: DailyNote) async {
+        guard let ref = familyRef, let babyId = note.baby?.id else { return }
+        try? await ref.collection("notes").document(note.id).setData([
+            "id": note.id,
+            "babyId": babyId,
+            "date": Timestamp(date: note.date),
+            "content": note.content,
+            "updatedAt": Timestamp()
+        ])
+    }
+
+    func delete(noteId: String) async {
+        guard let ref = familyRef else { return }
+        try? await ref.collection("notes").document(noteId).delete()
+    }
+
     // MARK: - Sync
 
     @MainActor
@@ -184,6 +203,7 @@ final class FirestoreService {
         let temperaturesSnap = try? await ref.collection("temperatures").getDocuments()
         let vaccinesSnap    = try? await ref.collection("vaccines").getDocuments()
         let growthSnap      = try? await ref.collection("growth").getDocuments()
+        let notesSnap       = try? await ref.collection("notes").getDocuments()
 
         guard let babyDocs = babiesSnap?.documents else { return }
         guard !babyDocs.isEmpty else {
@@ -199,6 +219,7 @@ final class FirestoreService {
         var temperaturesByID: [String: TemperatureReading] = [:]
         var vaccinesByID:     [String: VaccineRecord]     = [:]
         var growthByID:       [String: GrowthRecord]      = [:]
+        var notesByID:        [String: DailyNote]         = [:]
 
         for b in (try? context.fetch(FetchDescriptor<Baby>())) ?? []             { babiesByID[b.id]       = b }
         for p in (try? context.fetch(FetchDescriptor<MedicationPlan>())) ?? []   { plansByID[p.id]        = p }
@@ -208,6 +229,7 @@ final class FirestoreService {
         for t in (try? context.fetch(FetchDescriptor<TemperatureReading>())) ?? [] { temperaturesByID[t.id] = t }
         for v in (try? context.fetch(FetchDescriptor<VaccineRecord>())) ?? []    { vaccinesByID[v.id]     = v }
         for g in (try? context.fetch(FetchDescriptor<GrowthRecord>())) ?? []     { growthByID[g.id]       = g }
+        for n in (try? context.fetch(FetchDescriptor<DailyNote>())) ?? []        { notesByID[n.id]        = n }
 
         var seenBabies       = Set<String>()
         var seenPlans        = Set<String>()
@@ -217,6 +239,7 @@ final class FirestoreService {
         var seenTemperatures = Set<String>()
         var seenVaccines     = Set<String>()
         var seenGrowth       = Set<String>()
+        var seenNotes        = Set<String>()
 
         for doc in babyDocs {
             let d = doc.data()
@@ -225,11 +248,16 @@ final class FirestoreService {
                   let birthDate = (d["birthDate"] as? Timestamp)?.dateValue(),
                   let colorHex = d["colorHex"] as? String else { continue }
             seenBabies.insert(id)
+            let sex = BabySex(rawValue: d["sex"] as? String ?? "") ?? .male
+            let isActive = d["isActive"] as? Bool ?? true
             if let baby = babiesByID[id] {
                 baby.name = name; baby.birthDate = birthDate; baby.colorHex = colorHex
+                baby.sex = sex; baby.isActive = isActive
             } else {
                 let baby = Baby(name: name, birthDate: birthDate, colorHex: colorHex)
                 baby.id = id
+                baby.sex = sex
+                baby.isActive = isActive
                 context.insert(baby)
                 babiesByID[id] = baby
             }
@@ -250,18 +278,21 @@ final class FirestoreService {
             let notes = d["notes"] as? String ?? ""
             let weekdays = d["weekdays"] as? [Int] ?? []
             let endDate = (d["endDate"] as? Timestamp)?.dateValue()
+            let lastDoseDate = (d["lastDoseDate"] as? Timestamp)?.dateValue()
             let stoppedDate = (d["stoppedDate"] as? Timestamp)?.dateValue()
             if let plan = plansByID[id] {
                 plan.medicationName = name; plan.doseAmount = amount; plan.doseUnit = unit
                 plan.frequencyUnit = freq; plan.frequencyValue = freqVal
                 plan.weekdays = weekdays; plan.startDate = startDate
-                plan.endDate = endDate; plan.notes = notes; plan.stoppedDate = stoppedDate
+                plan.endDate = endDate; plan.lastDoseDate = lastDoseDate
+                plan.notes = notes; plan.stoppedDate = stoppedDate
             } else {
                 let plan = MedicationPlan(medicationName: name, doseAmount: amount, doseUnit: unit,
                                           frequencyUnit: freq, frequencyValue: freqVal,
                                           startDate: startDate, endDate: endDate, notes: notes)
                 plan.id = id
                 plan.weekdays = weekdays
+                plan.lastDoseDate = lastDoseDate
                 plan.stoppedDate = stoppedDate
                 plan.baby = babiesByID[babyId]
                 context.insert(plan)
@@ -397,6 +428,24 @@ final class FirestoreService {
             }
         }
 
+        for doc in notesSnap?.documents ?? [] {
+            let d = doc.data()
+            guard let id = d["id"] as? String,
+                  let babyId = d["babyId"] as? String,
+                  let date = (d["date"] as? Timestamp)?.dateValue(),
+                  let content = d["content"] as? String else { continue }
+            seenNotes.insert(id)
+            if let note = notesByID[id] {
+                note.date = date; note.content = content
+            } else {
+                let note = DailyNote(date: date, content: content)
+                note.id = id
+                note.baby = babiesByID[babyId]
+                context.insert(note)
+                notesByID[id] = note
+            }
+        }
+
         for (id, b) in babiesByID       where !seenBabies.contains(id)       { context.delete(b) }
         for (id, p) in plansByID        where !seenPlans.contains(id)        { context.delete(p) }
         for (id, r) in recordsByID      where !seenRecords.contains(id)      { context.delete(r) }
@@ -405,6 +454,7 @@ final class FirestoreService {
         for (id, t) in temperaturesByID where !seenTemperatures.contains(id) { context.delete(t) }
         for (id, v) in vaccinesByID     where !seenVaccines.contains(id)     { context.delete(v) }
         for (id, g) in growthByID       where !seenGrowth.contains(id)       { context.delete(g) }
+        for (id, n) in notesByID        where !seenNotes.contains(id)        { context.delete(n) }
     }
 
     // MARK: - Ensure migrated records have stable IDs
@@ -420,6 +470,7 @@ final class FirestoreService {
         for t in (try? context.fetch(FetchDescriptor<TemperatureReading>())) ?? [] where t.id.isEmpty { t.id = UUID().uuidString; changed = true }
         for v in (try? context.fetch(FetchDescriptor<VaccineRecord>())) ?? []     where v.id.isEmpty { v.id = UUID().uuidString; changed = true }
         for g in (try? context.fetch(FetchDescriptor<GrowthRecord>())) ?? []      where g.id.isEmpty { g.id = UUID().uuidString; changed = true }
+        for n in (try? context.fetch(FetchDescriptor<DailyNote>())) ?? []        where n.id.isEmpty { n.id = UUID().uuidString; changed = true }
         if changed { try? context.save() }
     }
 
@@ -435,6 +486,7 @@ final class FirestoreService {
         let temperatures = (try? context.fetch(FetchDescriptor<TemperatureReading>())) ?? []
         let vaccines     = (try? context.fetch(FetchDescriptor<VaccineRecord>())) ?? []
         let growth       = (try? context.fetch(FetchDescriptor<GrowthRecord>())) ?? []
+        let notes        = (try? context.fetch(FetchDescriptor<DailyNote>())) ?? []
         for b in babies       { await save(b) }
         for p in plans        { await save(p) }
         for r in records      { await save(r) }
@@ -443,5 +495,6 @@ final class FirestoreService {
         for t in temperatures { await save(t) }
         for v in vaccines     { await save(v) }
         for g in growth       { await save(g) }
+        for n in notes        { await save(n) }
     }
 }

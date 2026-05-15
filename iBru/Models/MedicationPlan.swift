@@ -21,6 +21,7 @@ final class MedicationPlan {
     var notes: String = ""
     var weekdays: [Int] = []   // Calendar weekday integers: 1=Sun, 2=Mon, … 7=Sat
     var stoppedDate: Date? = nil
+    var lastDoseDate: Date? = nil
 
     var baby: Baby?
 
@@ -50,12 +51,41 @@ final class MedicationPlan {
         self.notes = notes
     }
 
+    /// The timestamp beyond which no further doses are scheduled.
+    /// Used for schedule-overlap detection.
+    var effectiveScheduleEnd: Date {
+        if let lastDose = lastDoseDate { return lastDose }
+        if let end = endDate { return end.addingTimeInterval(86400) }
+        return .distantFuture
+    }
+
+    /// Whether this plan's schedule intersects with the half-open interval [newStart, newEnd).
+    func overlapsSchedule(newStart: Date, newEnd: Date) -> Bool {
+        guard stoppedDate == nil else { return false }
+        return startDate < newEnd && newStart < effectiveScheduleEnd
+    }
+
+    /// True for plans that are either currently running OR scheduled in the future.
+    /// Unlike `isActive`, this does not require `startDate <= today + 1 day`.
+    var isCurrentOrFuture: Bool {
+        guard stoppedDate == nil else { return false }
+        let now = Date.now
+        let today = Calendar.current.startOfDay(for: now)
+        if let lastDose = lastDoseDate, lastDose < now { return false }
+        if let end = endDate, end < today { return false }
+        return true
+    }
+
     var isActive: Bool {
         if stoppedDate != nil { return false }
         let now = Date.now
         let today = Calendar.current.startOfDay(for: now)
         guard startDate <= today.addingTimeInterval(86400) else { return false }
-        if let end = endDate { return end >= today }
+        if let end = endDate {
+            if end < today { return false }
+            if let lastDose = lastDoseDate, lastDose < now { return false }
+            return true
+        }
         return true
     }
 

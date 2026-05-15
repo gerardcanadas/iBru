@@ -6,12 +6,13 @@ let previewContainer: ModelContainer = {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(
         for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self,
-        TemperatureReading.self, VaccineRecord.self, GrowthRecord.self,
+        TemperatureReading.self, VaccineRecord.self, GrowthRecord.self, DailyNote.self,
         configurations: config
     )
     let ctx = container.mainContext
 
     let baby = Baby(name: "Pau", birthDate: Date.now.addingTimeInterval(-86400 * 90), colorHex: "#5B8DEF")
+    baby.sex = .male
     ctx.insert(baby)
 
     let plan1 = MedicationPlan(
@@ -95,6 +96,14 @@ let previewContainer: ModelContainer = {
     g2.baby = baby; ctx.insert(g2)
     let g3 = GrowthRecord(date: .now, weightKg: 6.8, heightCm: 65.5, headCircumferenceCm: 42.0)
     g3.baby = baby; ctx.insert(g3)
+
+    // Sample daily notes
+    let n1 = DailyNote(date: .now, content: "Ate well today, slept 4h in the afternoon.")
+    n1.baby = baby; ctx.insert(n1)
+    let n2 = DailyNote(date: Calendar.current.date(byAdding: .day, value: -1, to: .now)!, content: "Fussy in the morning, better after nap.")
+    n2.baby = baby; ctx.insert(n2)
+    let n3 = DailyNote(date: Calendar.current.date(byAdding: .day, value: -3, to: .now)!, content: "First time rolling over! Very excited.")
+    n3.baby = baby; ctx.insert(n3)
 
     return container
 }()

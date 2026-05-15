@@ -8,7 +8,7 @@ struct iBruApp: App {
     private let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
     private let container: ModelContainer = {
-        let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self, GrowthRecord.self])
+        let schema = Schema([Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self, QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self, GrowthRecord.self, DailyNote.self])
         let config = ModelConfiguration(schema: schema)
         return try! ModelContainer(for: schema, configurations: config)
     }()

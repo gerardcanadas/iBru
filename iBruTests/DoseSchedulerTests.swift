@@ -13,7 +13,7 @@ struct DoseSchedulerTests {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         container = try ModelContainer(
             for: Baby.self, MedicationPlan.self, DoseRecord.self, IllnessRecord.self,
-            QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self, GrowthRecord.self,
+            QuickDoseRecord.self, TemperatureReading.self, VaccineRecord.self, GrowthRecord.self, DailyNote.self,
             configurations: config
         )
         context = ModelContext(container)
@@ -39,7 +39,8 @@ struct DoseSchedulerTests {
         start: Date,
         end: Date? = nil,
         weekdays: [Int] = [],
-        stopped: Date? = nil
+        stopped: Date? = nil,
+        lastDoseDate: Date? = nil
     ) -> MedicationPlan {
         let p = MedicationPlan(
             medicationName: "Drug",
@@ -52,6 +53,7 @@ struct DoseSchedulerTests {
         )
         p.weekdays = weekdays
         p.stoppedDate = stopped
+        p.lastDoseDate = lastDoseDate
         context.insert(p)
         return p
     }
@@ -173,5 +175,62 @@ struct DoseSchedulerTests {
         let a = date(2025, 1, 1, hour: 8)
         let b = a.addingTimeInterval(60)
         #expect(!DoseScheduler.isMatch(a, b))
+    }
+
+    // MARK: - lastDoseDate filter
+
+    @Test func lastDoseDate_onSameDay_truncatesLaterSlots() {
+        // Plan every 8h starting midnight: slots at 00:00, 08:00, 16:00
+        // lastDoseDate = 08:00 → only 00:00 and 08:00 should be returned
+        let day = date(2025, 3, 1)
+        let lastDose = date(2025, 3, 1, hour: 8)
+        let p = plan(frequency: .everyNHours, value: 8, start: day, lastDoseDate: lastDose)
+        let times = DoseScheduler.scheduledTimes(for: p, on: day, calendar: utc)
+        #expect(times.count == 2)
+        #expect(times.last == lastDose)
+    }
+
+    @Test func lastDoseDate_onDifferentDay_doesNotFilterSlots() {
+        // lastDoseDate yesterday → today's slots are unaffected
+        let yesterday = date(2025, 3, 1)
+        let today = date(2025, 3, 2)
+        let lastDose = date(2025, 3, 1, hour: 8)
+        let p = plan(frequency: .everyNHours, value: 8, start: yesterday, lastDoseDate: lastDose)
+        let times = DoseScheduler.scheduledTimes(for: p, on: today, calendar: utc)
+        #expect(times.count == 3)
+    }
+
+    @Test func lastDoseDate_exactlyAtLastSlot_includesThatSlot() {
+        // lastDoseDate = 16:00; the 16:00 slot is within the 60s window
+        let day = date(2025, 3, 1)
+        let lastDose = date(2025, 3, 1, hour: 16)
+        let p = plan(frequency: .everyNHours, value: 8, start: day, lastDoseDate: lastDose)
+        let times = DoseScheduler.scheduledTimes(for: p, on: day, calendar: utc)
+        #expect(times.contains(lastDose))
+    }
+
+    // MARK: - nextSlot skipped exclusion
+    // These tests use Calendar.current (not UTC) to match nextSlot's internal calendar.
+
+    @Test func nextSlot_skippedRecord_isExcluded() {
+        // Plan with one slot tomorrow; marking it skipped → nextSlot returns nil.
+        let cal = Calendar.current
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: .now))!
+        let p = plan(frequency: .timesPerDay, value: 1, start: tomorrow)
+        let slot = DoseScheduler.scheduledTimes(for: p, on: tomorrow).first!
+        let skipped = DoseRecord(scheduledDate: slot, status: .skipped)
+        skipped.plan = p
+        context.insert(skipped)
+        #expect(DoseScheduler.nextSlot(for: [p]) == nil)
+    }
+
+    @Test func nextSlot_noSkippedRecord_returnsNextSlot() {
+        // Plan with one slot tomorrow and no records → nextSlot returns that slot.
+        let cal = Calendar.current
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: .now))!
+        let p = plan(frequency: .timesPerDay, value: 1, start: tomorrow)
+        let slot = DoseScheduler.scheduledTimes(for: p, on: tomorrow).first!
+        let result = DoseScheduler.nextSlot(for: [p])
+        #expect(result?.scheduledTime == slot)
     }
 }

@@ -4,6 +4,7 @@ import SwiftData
 struct MedicationCardView: View {
     let plan: MedicationPlan
     let accentColor: Color
+    var futurePlan: MedicationPlan? = nil
 
     private var scheduledToday: [Date] {
         DoseScheduler.scheduledTimes(for: plan, on: .now)
@@ -70,6 +71,19 @@ struct MedicationCardView: View {
                 Text("\(takenToday)/\(scheduledToday.count)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
+            }
+
+            if let future = futurePlan {
+                Divider()
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                    Text("Changing to \(future.doseSummary) · \(future.frequencySummary) on \(future.startDate.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                        .lineLimit(1)
+                }
             }
         }
         .padding()

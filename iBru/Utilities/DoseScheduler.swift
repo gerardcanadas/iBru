@@ -52,6 +52,10 @@ enum DoseScheduler {
             if let date = calendar.date(from: comps) { times = [date] }
         }
 
+        if let lastDose = plan.lastDoseDate, calendar.isDate(lastDose, inSameDayAs: day) {
+            times = times.filter { $0 <= lastDose.addingTimeInterval(60) }
+        }
+
         return times
     }
 
@@ -62,6 +66,10 @@ enum DoseScheduler {
             plans.flatMap { plan in
                 scheduledTimes(for: plan, on: day, calendar: calendar)
                     .filter { $0 > now }
+                    .filter { slot in
+                        let existing = plan.records.first(where: { isMatch($0.scheduledDate, slot) })
+                        return existing?.status != .skipped
+                    }
                     .map { ScheduledSlot(scheduledTime: $0, plan: plan) }
             }
         }

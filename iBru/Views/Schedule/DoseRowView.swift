@@ -46,6 +46,14 @@ struct DoseRowView: View {
             }
         }
         .padding(.vertical, 4)
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            if isSkipped && slot > .now {
+                Button { undoSkip() } label: {
+                    Label("Restore", systemImage: "arrow.uturn.left")
+                }
+                .tint(.blue)
+            }
+        }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if record == nil {
                 Button { logDose(.skipped) } label: {
@@ -86,6 +94,13 @@ struct DoseRowView: View {
         if isSkipped { return .secondary }
         if isOverdue { return .orange }
         return .blue
+    }
+
+    private func undoSkip() {
+        guard let r = record else { return }
+        let rid = r.id
+        modelContext.delete(r)
+        Task { await FirestoreService.shared.delete(recordId: rid) }
     }
 
     private func logDose(_ status: DoseStatus) {

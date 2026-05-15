@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct DashboardView: View {
-    @Query(sort: \Baby.name) private var babies: [Baby]
+    @Query(filter: #Predicate<Baby> { $0.isActive == true }, sort: \Baby.name) private var babies: [Baby]
     let baby: Baby?
 
     @Query private var allQuickDoses: [QuickDoseRecord]
@@ -19,6 +19,21 @@ struct DashboardView: View {
 
     private var activePlans: [MedicationPlan] {
         (baby?.plans ?? []).filter { $0.isActive }.sorted { $0.medicationName < $1.medicationName }
+    }
+
+    private var futurePlansByMedName: [String: MedicationPlan] {
+        let all = baby?.plans ?? []
+        let future = all.filter { $0.stoppedDate == nil && $0.startDate > .now && !$0.isActive }
+        var result: [String: MedicationPlan] = [:]
+        for plan in future {
+            let key = plan.medicationName.lowercased()
+            if let existing = result[key] {
+                if plan.startDate < existing.startDate { result[key] = plan }
+            } else {
+                result[key] = plan
+            }
+        }
+        return result
     }
 
     private var overdueCount: Int {
@@ -77,7 +92,7 @@ struct DashboardView: View {
                 Button("Cancel", role: .cancel) { quickDoseToDelete = nil }
             }
             .navigationDestination(item: $selectedPlan) { plan in
-                HistoryView(plan: plan)
+                MedicationTimelineView(baby: baby!, medicationName: plan.medicationName)
             }
             .confirmationDialog(
                 "Stop \(planToStop?.medicationName ?? "medication")?",
@@ -232,7 +247,8 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
             } else {
                 ForEach(activePlans) { plan in
-                    MedicationCardView(plan: plan, accentColor: accentColor)
+                    let futurePlan = futurePlansByMedName[plan.medicationName.lowercased()]
+                    MedicationCardView(plan: plan, accentColor: accentColor, futurePlan: futurePlan)
                         .onTapGesture { selectedPlan = plan }
                         .contextMenu {
                             Button(role: .destructive) { planToStop = plan } label: {

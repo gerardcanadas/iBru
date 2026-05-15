@@ -1,12 +1,19 @@
 import SwiftData
 import Foundation
 
+enum BabySex: String, Codable, CaseIterable {
+    case male, female
+    var label: String { self == .male ? String(localized: "Male") : String(localized: "Female") }
+}
+
 @Model
 final class Baby {
     var id: String = UUID().uuidString
     var name: String = ""
     var birthDate: Date = Date.now
     var colorHex: String = "#5B8DEF"
+    var sex: BabySex = BabySex.male
+    var isActive: Bool = true
 
     @Relationship(deleteRule: .cascade, inverse: \MedicationPlan.baby)
     var plans: [MedicationPlan] = []
@@ -22,6 +29,9 @@ final class Baby {
 
     @Relationship(deleteRule: .cascade, inverse: \GrowthRecord.baby)
     var growthRecords: [GrowthRecord] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \DailyNote.baby)
+    var dailyNotes: [DailyNote] = []
 
     init(name: String, birthDate: Date, colorHex: String = "#5B8DEF") {
         self.name = name
