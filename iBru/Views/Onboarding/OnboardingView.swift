@@ -6,7 +6,7 @@ struct OnboardingView: View {
 
     @State private var currentPage = 0
     @State private var showingBabyForm = false
-    @Query(sort: \Baby.name) private var babies: [Baby]
+    @Query(filter: #Predicate<Baby> { $0.isActive == true }, sort: \Baby.name) private var babies: [Baby]
 
     private struct Page {
         let symbol: String
@@ -34,7 +34,11 @@ struct OnboardingView: View {
              isInteractive: false),
         Page(symbol: "stethoscope",
              title: "Health Records",
-             body: "Track illnesses, vaccines, and growth milestones all in one place.",
+             body: "Track illnesses, vaccines, growth measurements, and temperatures — all in one place.",
+             isInteractive: false),
+        Page(symbol: "note.text",
+             title: "Daily Notes",
+             body: "Write observations for any day — milestones, feeding notes, anything worth remembering. Find them in the Notes tab of Records.",
              isInteractive: false),
         Page(symbol: "chart.xyaxis.line",
              title: "Understand the Patterns",
@@ -61,6 +65,7 @@ struct OnboardingView: View {
                     pageContent(pages[3]).tag(3)
                     pageContent(pages[4]).tag(4)
                     pageContent(pages[5]).tag(5)
+                    pageContent(pages[6]).tag(6)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.easeInOut, value: currentPage)

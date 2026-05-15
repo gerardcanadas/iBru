@@ -721,6 +721,38 @@
         }
       }
     },
+    "Daily Notes" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes diàries"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas diarias"
+          }
+        }
+      }
+    },
+    "Write observations for any day — milestones, feeding notes, anything worth remembering. Find them in the Notes tab of Records." : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escriu observacions de qualsevol dia — fites, notes d'alimentació, qualsevol cosa que valgui la pena recordar. Les trobaràs a la pestanya Notes dels Registres."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe observaciones de cualquier día — hitos, notas de alimentación, cualquier cosa que valga la pena recordar. Las encontrarás en la pestaña Notas de los Registros."
+          }
+        }
+      }
+    },
     "Daily" : {
       "localizations" : {
         "ca" : {
@@ -4012,6 +4044,7 @@
       }
     },
     "Track illnesses, vaccines, and growth milestones all in one place." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ca" : {
           "stringUnit" : {
@@ -4023,6 +4056,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lleva el control de enfermedades, vacunas e hitos de crecimiento, todo en un lugar."
+          }
+        }
+      }
+    },
+    "Track illnesses, vaccines, growth measurements, and temperatures — all in one place." : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controla malalties, vacunes, mesures de creixement i temperatures, tot en un sol lloc."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lleva el control de enfermedades, vacunas, medidas de crecimiento y temperaturas, todo en un lugar."
           }
         }
       }
