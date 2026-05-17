@@ -2664,6 +2664,38 @@
         }
       }
     },
+    "No Notes" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sense notes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin notas"
+          }
+        }
+      }
+    },
+    "Tap + to add a general observation" : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca + per afegir una observació general"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca + para añadir una observación general"
+          }
+        }
+      }
+    },
     "No medications" : {
       "localizations" : {
         "ca" : {
@@ -4030,22 +4062,6 @@
         }
       }
     },
-    "Track illnesses, vaccines, growth, and temperatures. Open any illness to add daily log entries and follow how symptoms evolve over time." : {
-      "localizations" : {
-        "ca" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Registra malalties, vacunes, creixement i temperatures. Obre qualsevol malaltia per afegir entrades al diari i seguir l'evolució dels símptomes."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Registra enfermedades, vacunas, crecimiento y temperaturas. Abre cualquier enfermedad para añadir entradas al diario y seguir la evolución de los síntomas."
-          }
-        }
-      }
-    },
     "Track illnesses, vaccines, and growth milestones all in one place." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4064,6 +4080,7 @@
       }
     },
     "Track illnesses, vaccines, growth measurements, and temperatures — all in one place." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ca" : {
           "stringUnit" : {
@@ -4075,6 +4092,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lleva el control de enfermedades, vacunas, medidas de crecimiento y temperaturas, todo en un lugar."
+          }
+        }
+      }
+    },
+    "Track illnesses, vaccines, growth, and temperatures. Open any illness to add daily log entries and follow how symptoms evolve over time." : {
+      "localizations" : {
+        "ca" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra malalties, vacunes, creixement i temperatures. Obre qualsevol malaltia per afegir entrades al diari i seguir l'evolució dels símptomes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra enfermedades, vacunas, crecimiento y temperaturas. Abre cualquier enfermedad para añadir entradas al diario y seguir la evolución de los síntomas."
           }
         }
       }
